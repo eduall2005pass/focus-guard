@@ -29,6 +29,7 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | :--- | :--- | :--- | :--- |
 | **Communication** | WhatsApp | `com.whatsapp` | Communities guarded via Accessibility |
 | | WhatsApp Business | `com.whatsapp.w4b` | Communities guarded via Accessibility |
+| | Brilliant Connect | `com.brilliant.connect.com.bd` | IP Telephony & Low-cost calls |
 | **Banking & Payments** | iSmart (IBBL) | `com.ibbl.ibbl_ismart`, `com.ibbl.ismart` | Full banking flow supported |
 | | Cellfin (IBBL) | `com.ibbl.cellfin` | In-app WebView preserved |
 | | bKash | `com.bKash.customerapp` | MFS |
@@ -67,6 +68,18 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 - **General-Purpose Browsers**: Google Chrome, Mozilla Firefox, Samsung Internet, Opera, Brave, Microsoft Edge, DuckDuckGo, Mi Browser, ColorOS Browser, Vivo Browser, Phoenix, UC Browser, Tor Browser.
 - **Telegram**: Regular Telegram (`org.telegram.messenger`), Telegram Web, Telegram X, NekoX. *(A dedicated personal cloud file browser may be allowed separately in the future).*
 - **Social Media & Distractions**: YouTube, YouTube Music, YouTube Kids, Facebook, Facebook Lite, Messenger, Instagram, TikTok, Twitter/X, Snapchat, Reddit, Pinterest, Netflix.
+
+---
+
+### 3. Permanent Approved App Registry & Reinstallation
+
+Focus Guard features an administrator-controlled **Permanent Approved App Registry** (`approved_app_registry.json`) designed to address a critical usability requirement:
+- **Reinstallability**: When an approved app (e.g., WhatsApp, Brilliant Connect, bKash) is uninstalled by the user, its record in the registry is **not** deleted. Focus Guard only marks `isCurrentlyInstalled = false`.
+- **Install Policy Discrimination**:
+  1. **Approved Application (New / Reinstall)**: Recognized in `ApprovedAppRegistry`. Permitted to install and unhide immediately.
+  2. **Baseline Component Update**: Cryptographically verified against pre-provisioning SHA-256 certificate fingerprints. Permitted to update.
+  3. **Unapproved Application**: Instantly suspended, hidden via `setApplicationHidden(true)`, and passed to `PackageInstaller.uninstall()`.
+- **One-Tap Store Reinstallation**: Uninstalled approved apps remain clearly visible in the **Allowed Apps** screen with an `UNINSTALLED (APPROVED)` badge and a direct store reinstall button to open Google Play Store / Galaxy Store.
 
 ---
 

@@ -36,6 +36,22 @@ class PackageChangeReceiver : BroadcastReceiver() {
                     pendingResult.finish()
                 }
             }
+        } else if (action == Intent.ACTION_PACKAGE_REMOVED || action == Intent.ACTION_PACKAGE_FULLY_REMOVED) {
+            val isReplacing = intent.getBooleanExtra(Intent.EXTRA_REPLACING, false)
+            if (!isReplacing) {
+                Log.i(TAG, "Package uninstall detected: $packageName. Preserving record in Approved Registry for future reinstall.")
+                val controller = DevicePolicyController(context)
+                val pendingResult = goAsync()
+                CoroutineScope(Dispatchers.Default).launch {
+                    try {
+                        controller.onPackageUninstalled(packageName)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Failed to handle uninstall event for $packageName", e)
+                    } finally {
+                        pendingResult.finish()
+                    }
+                }
+            }
         }
     }
 

@@ -20,6 +20,7 @@ class DevicePolicyController(private val context: Context) {
     private val adminComponent = ComponentName(context, FocusGuardDeviceAdminReceiver::class.java)
     private val repository = AllowlistRepository(context)
     val baselineManager = com.focusguard.data.repository.BaselineInventoryManager(context)
+    val approvedAppRegistry = com.focusguard.data.repository.ApprovedAppRegistry(context)
 
     companion object {
         private const val TAG = "FocusGuard_DPC"
@@ -166,12 +167,14 @@ class DevicePolicyController(private val context: Context) {
             // Check if Knox Service Plugin is installed
             context.packageManager.getPackageInfo(KNOX_SERVICE_PLUGIN_PACKAGE, 0)
 
+            val approvedPkgsString = approvedAppRegistry.getApprovedPackages().joinToString(",")
             val kspRestrictions = android.os.Bundle().apply {
                 val appPolicies = android.os.Bundle().apply {
                     putBoolean("enableApplicationManagementPolicies", true)
                     // On One UI 8.0/Knox 3.13, setting showGalaxyStoreApp to "Hide"
                     // conceals the Galaxy Store UI while preserving underlying Samsung update daemons
                     putString("showGalaxyStoreApp", "Hide")
+                    putString("installWhiteList", approvedPkgsString)
                 }
                 putBundle("applicationManagementPolicies", appPolicies)
             }
@@ -216,12 +219,13 @@ class DevicePolicyController(private val context: Context) {
             errors.add("Failed to lock uninstall for Focus Guard: ${e.message}")
         }
 
-        // 2. Initialize or Refresh Cryptographic Baseline Inventory of Existing Apps
+        // 2. Initialize Permanent Approved App Registry & Baseline Inventory
         try {
+            val registryCount = approvedAppRegistry.initializeRegistryIfNotExists()
             val baselineCount = baselineManager.createBaselineIfNotExists()
-            Log.i(TAG, "Baseline inventory active with $baselineCount verified packages.")
+            Log.i(TAG, "Approved registry active ($registryCount packages). Baseline active ($baselineCount packages).")
         } catch (e: Exception) {
-            errors.add("Failed to initialize baseline inventory: ${e.message}")
+            errors.add("Failed to initialize app registry/baseline: ${e.message}")
         }
 
         // 3. Configure Automatic Samsung OTA Firmware Updates
@@ -378,7 +382,23 @@ class DevicePolicyController(private val context: Context) {
         if (!isDeviceOwner()) return
         if (packageName == context.packageName || CRITICAL_SYSTEM_PACKAGES.contains(packageName) || packageName == GALAXY_STORE_PACKAGE) return
 
-        // 1. Check if this is a legitimate update to an existing baseline package
+        // 1. Check if the package is present in the Permanent Approved App Registry
+        // (Allows initial install as well as reinstallation after being uninstalled)
+        if (approvedAppRegistry.isApproved(packageName)) {
+            val certSha256 = baselineManager.getInstalledCertificateSha256(packageName)
+            approvedAppRegistry.markInstalledState(packageName, isInstalled = true, certSha256 = certSha256)
+            Log.i(TAG, "Approved application $packageName verified in permanent registry (install/reinstall permitted).")
+            try {
+                dpm.setApplicationHidden(adminComponent, packageName, false)
+                dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), false)
+                dpm.setUninstallBlocked(adminComponent, packageName, true)
+            } catch (e: Exception) {
+                Log.w(TAG, "Error ensuring unhidden state for approved package $packageName: ${e.message}")
+            }
+            return
+        }
+
+        // 2. Check if this is a legitimate update to an existing baseline package
         if (baselineManager.isLegitimateBaselineUpdate(packageName)) {
             Log.i(TAG, "Legitimate update to baseline package $packageName verified with matching signature. Permitting.")
             try {
@@ -387,23 +407,6 @@ class DevicePolicyController(private val context: Context) {
                 dpm.setUninstallBlocked(adminComponent, packageName, true)
             } catch (e: Exception) {
                 Log.w(TAG, "Error ensuring unhidden state for updated package $packageName: ${e.message}")
-            }
-            return
-        }
-
-        // 2. Check if this is an explicitly approved new application
-        val isAllowed = repository.isExplicitlyAllowed(packageName, customAllowed)
-        val isBlocked = repository.isExplicitlyBlocked(packageName)
-
-        if (isAllowed && !isBlocked) {
-            Log.i(TAG, "New package $packageName matches administrator allowlist. Permitting and updating baseline.")
-            baselineManager.forceRefreshBaseline()
-            try {
-                dpm.setApplicationHidden(adminComponent, packageName, false)
-                dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), false)
-                dpm.setUninstallBlocked(adminComponent, packageName, true)
-            } catch (e: Exception) {
-                Log.w(TAG, "Error protecting new allowed package $packageName: ${e.message}")
             }
             return
         }
@@ -436,6 +439,18 @@ class DevicePolicyController(private val context: Context) {
             Log.i(TAG, "Triggered uninstallation session for unauthorized package: $packageName")
         } catch (e: Exception) {
             Log.w(TAG, "Could not trigger silent uninstall for $packageName (app remains hidden/suspended): ${e.message}")
+        }
+    }
+
+    /**
+     * Called when an application is uninstalled by the user.
+     * Preserves the approved record in the registry so the user can reinstall it at any time.
+     */
+    fun onPackageUninstalled(packageName: String) {
+        if (!isDeviceOwner()) return
+        if (approvedAppRegistry.isApproved(packageName)) {
+            Log.i(TAG, "Approved package $packageName uninstalled. Record preserved in registry for future reinstallation.")
+            approvedAppRegistry.markInstalledState(packageName, isInstalled = false)
         }
     }
 }

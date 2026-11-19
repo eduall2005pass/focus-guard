@@ -29,7 +29,8 @@ fun AllowedAppsScreen(
     installedApps: List<AppItem>,
     customAllowed: Set<String>,
     onAddCustomPackage: (String) -> Unit,
-    onRemoveCustomPackage: (String) -> Unit
+    onRemoveCustomPackage: (String) -> Unit,
+    onReinstallPackage: ((String) -> Unit)? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<AppCategory?>(null) }
@@ -143,7 +144,8 @@ fun AllowedAppsScreen(
                     AppItemRow(
                         app = app,
                         isCustom = isCustom,
-                        onDeleteCustom = { onRemoveCustomPackage(app.packageName) }
+                        onDeleteCustom = { onRemoveCustomPackage(app.packageName) },
+                        onReinstall = { onReinstallPackage?.invoke(app.packageName) }
                     )
                 }
             }
@@ -216,7 +218,8 @@ fun AllowedAppsScreen(
 private fun AppItemRow(
     app: AppItem,
     isCustom: Boolean,
-    onDeleteCustom: () -> Unit
+    onDeleteCustom: () -> Unit,
+    onReinstall: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -303,6 +306,20 @@ private fun AppItemRow(
                                 .padding(horizontal = 4.dp, vertical = 2.dp)
                         )
                     }
+
+                    if (!app.isInstalled && app.isAllowed) {
+                        Text(
+                            text = "UNINSTALLED (APPROVED)",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = GuardAmberText
+                            ),
+                            modifier = Modifier
+                                .background(GuardAmberContainer.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
                 }
 
                 Text(
@@ -327,22 +344,43 @@ private fun AppItemRow(
                 }
             }
 
-            if (isCustom) {
-                IconButton(onClick = onDeleteCustom) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Remove custom allowance",
-                        tint = GuardRedText
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (!app.isInstalled && app.isAllowed) {
+                    IconButton(
+                        onClick = { onReinstall?.invoke() },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Refresh,
+                            contentDescription = "Install / Reinstall from store",
+                            tint = GuardGreenText
+                        )
+                    }
+                }
+
+                if (isCustom) {
+                    IconButton(
+                        onClick = onDeleteCustom,
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Remove custom allowance",
+                            tint = GuardRedText
+                        )
+                    }
+                } else if (app.isInstalled) {
+                    Text(
+                        text = if (app.isAllowed) "Allowed" else "Blocked",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = if (app.isAllowed) GuardGreenText else GuardRedText,
+                            fontWeight = FontWeight.Bold
+                        )
                     )
                 }
-            } else {
-                Text(
-                    text = if (app.isAllowed) "Allowed" else "Blocked",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        color = if (app.isAllowed) GuardGreenText else GuardRedText,
-                        fontWeight = FontWeight.Bold
-                    )
-                )
             }
         }
     }

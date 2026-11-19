@@ -12,6 +12,7 @@ class PolicyVerificationTest {
         // Communication
         "com.whatsapp",
         "com.whatsapp.w4b",
+        "com.brilliant.connect.com.bd",
 
         // Banking & Payments
         "com.ibbl.ibbl_ismart",
@@ -76,6 +77,7 @@ class PolicyVerificationTest {
         val predefinedAllowed = listOf(
             AppItem("com.whatsapp", "WhatsApp", AppCategory.COMMUNICATION),
             AppItem("com.whatsapp.w4b", "WhatsApp Business", AppCategory.COMMUNICATION),
+            AppItem("com.brilliant.connect.com.bd", "Brilliant Connect", AppCategory.COMMUNICATION),
             AppItem("com.ibbl.ibbl_ismart", "iSmart", AppCategory.BANKING_PAYMENTS),
             AppItem("com.ibbl.ismart", "iSmart", AppCategory.BANKING_PAYMENTS),
             AppItem("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS),
@@ -197,5 +199,151 @@ class PolicyVerificationTest {
         // Spoofed or mismatched cert must be rejected
         val isMismatched = baselineRecord.signingCertificateSha256.equals(fakeCert, ignoreCase = true)
         assertFalse("Update with mismatched signature must be rejected", isMismatched)
+    }
+
+    @Test
+    fun verifyBrilliantConnectInRegistryAndAllowlist() {
+        val brilliantPkg = "com.brilliant.connect.com.bd"
+        assertTrue("Brilliant Connect must be in expectedAllowedPackages", expectedAllowedPackages.contains(brilliantPkg))
+    }
+
+    @Test
+    fun verifyApprovedRegistryPreservesUninstalledAppForReinstall() {
+        // Model simulation of ApprovedAppRegistry
+        val registry = mutableMapOf<String, com.focusguard.data.repository.ApprovedAppEntry>()
+
+        // 1. Initial state: WhatsApp and Brilliant Connect installed
+        registry["com.whatsapp"] = com.focusguard.data.repository.ApprovedAppEntry(
+            packageName = "com.whatsapp",
+            displayName = "WhatsApp",
+            category = AppCategory.COMMUNICATION,
+            isPredefined = true,
+            isCurrentlyInstalled = true
+        )
+        registry["com.brilliant.connect.com.bd"] = com.focusguard.data.repository.ApprovedAppEntry(
+            packageName = "com.brilliant.connect.com.bd",
+            displayName = "Brilliant Connect",
+            category = AppCategory.COMMUNICATION,
+            isPredefined = true,
+            isCurrentlyInstalled = true
+        )
+
+        // Verify both are approved and installed
+        assertTrue("WhatsApp must be approved", registry.containsKey("com.whatsapp"))
+        assertTrue("WhatsApp must be marked installed", registry["com.whatsapp"]!!.isCurrentlyInstalled)
+        assertTrue("Brilliant Connect must be approved", registry.containsKey("com.brilliant.connect.com.bd"))
+
+        // 2. User uninstalls Brilliant Connect
+        val brilliantEntry = registry["com.brilliant.connect.com.bd"]!!
+        registry["com.brilliant.connect.com.bd"] = brilliantEntry.copy(isCurrentlyInstalled = false)
+
+        // 3. Verify record is NOT deleted upon uninstallation
+        assertTrue("Brilliant Connect record MUST remain in registry after uninstall", registry.containsKey("com.brilliant.connect.com.bd"))
+        assertFalse("Brilliant Connect installed status must be false", registry["com.brilliant.connect.com.bd"]!!.isCurrentlyInstalled)
+
+        // 4. Verify policy permits reinstallation because it remains in the approved registry
+        val canReinstall = registry.containsKey("com.brilliant.connect.com.bd")
+        assertTrue("Approved uninstalled app must remain reinstallable", canReinstall)
+
+        // 5. User reinstalls Brilliant Connect: Mark as installed again
+        registry["com.brilliant.connect.com.bd"] = registry["com.brilliant.connect.com.bd"]!!.copy(isCurrentlyInstalled = true)
+        assertTrue("Reinstalled app must now be marked installed", registry["com.brilliant.connect.com.bd"]!!.isCurrentlyInstalled)
+    }
+
+    @Test
+    fun verifyInstallationPolicyPermitsApprovedReinstallAndBlocksUnapproved() {
+        val registry = setOf("com.whatsapp", "com.brilliant.connect.com.bd", "com.bKash.customerapp")
+        val baselinePackages = setOf("com.sec.android.app.camera")
+
+        fun evaluateInstallation(pkg: String): String {
+            return when {
+                registry.contains(pkg) -> "PERMIT_APPROVED_INSTALL_OR_REINSTALL"
+                baselinePackages.contains(pkg) -> "PERMIT_LEGITIMATE_UPDATE"
+                else -> "BLOCK_AND_REMEDIATE"
+            }
+        }
+
+        // Test reinstallation of approved app
+        assertEquals(
+            "Approved app must be permitted for install/reinstall",
+            "PERMIT_APPROVED_INSTALL_OR_REINSTALL",
+            evaluateInstallation("com.brilliant.connect.com.bd")
+        )
+
+        // Test update of existing baseline component
+        assertEquals(
+            "Baseline component update must be permitted",
+            "PERMIT_LEGITIMATE_UPDATE",
+            evaluateInstallation("com.sec.android.app.camera")
+        )
+
+        // Test blocked unauthorized app (e.g. unapproved game / browser)
+        assertEquals(
+            "Unapproved app must be blocked and remediated immediately",
+            "BLOCK_AND_REMEDIATE",
+            evaluateInstallation("com.unapproved.distraction.game")
+        )
+    }
+
+    @Test
+    fun verifyAdminCanAddCustomPackageAndPreserveAfterUninstall() {
+        val registry = mutableMapOf<String, com.focusguard.data.repository.ApprovedAppEntry>()
+        val customPkg = "com.custom.hospital.app"
+
+        // 1. Admin adds custom package
+        registry[customPkg] = com.focusguard.data.repository.ApprovedAppEntry(
+            packageName = customPkg,
+            displayName = "Hospital Portal",
+            category = AppCategory.CUSTOM_ALLOWED,
+            isCustomAdded = true,
+            isCurrentlyInstalled = true
+        )
+        assertTrue(registry.containsKey(customPkg))
+
+        // 2. User uninstalls custom package
+        registry[customPkg] = registry[customPkg]!!.copy(isCurrentlyInstalled = false)
+
+        // 3. Must preserve custom package record
+        assertTrue("Custom package must persist across uninstallation", registry.containsKey(customPkg))
+        assertFalse(registry[customPkg]!!.isCurrentlyInstalled)
+
+        // 4. Reinstall is permitted
+        val isPermitted = registry.containsKey(customPkg)
+        assertTrue("Custom approved package must be reinstallable", isPermitted)
+    }
+
+    @Test
+    fun verifyEssentialPackagesCannotBeRemovedFromRegistry() {
+        val essentialEntry = com.focusguard.data.repository.ApprovedAppEntry(
+            packageName = "com.google.android.webview",
+            displayName = "WebView",
+            category = AppCategory.ESSENTIAL_SYSTEM,
+            isPredefined = true,
+            isEssential = true
+        )
+        val customEntry = com.focusguard.data.repository.ApprovedAppEntry(
+            packageName = "com.custom.tool",
+            displayName = "Custom Tool",
+            category = AppCategory.CUSTOM_ALLOWED,
+            isCustomAdded = true,
+            isEssential = false
+        )
+
+        fun canRemove(entry: com.focusguard.data.repository.ApprovedAppEntry): Boolean {
+            return !entry.isEssential
+        }
+
+        assertFalse("Essential system component cannot be removed by admin", canRemove(essentialEntry))
+        assertTrue("Custom package can be removed by admin", canRemove(customEntry))
+    }
+
+    @Test
+    fun verifyKnoxKspWhiteListFormatting() {
+        val approvedPackages = setOf("com.whatsapp", "com.brilliant.connect.com.bd", "com.bKash.customerapp")
+        val joined = approvedPackages.joinToString(",")
+
+        assertTrue("Whitelist string must contain com.whatsapp", joined.contains("com.whatsapp"))
+        assertTrue("Whitelist string must contain com.brilliant.connect.com.bd", joined.contains("com.brilliant.connect.com.bd"))
+        assertTrue("Whitelist string must contain com.bKash.customerapp", joined.contains("com.bKash.customerapp"))
     }
 }

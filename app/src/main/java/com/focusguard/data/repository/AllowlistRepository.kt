@@ -43,6 +43,7 @@ class AllowlistRepository(private val context: Context) {
         // Communication
         AppItem("com.whatsapp", "WhatsApp", AppCategory.COMMUNICATION, note = "Communities guarded via Accessibility"),
         AppItem("com.whatsapp.w4b", "WhatsApp Business", AppCategory.COMMUNICATION, note = "Communities guarded via Accessibility"),
+        AppItem("com.brilliant.connect.com.bd", "Brilliant Connect", AppCategory.COMMUNICATION, note = "IP Telephony & Communication"),
 
         // Banking and Payments
         AppItem("com.ibbl.ibbl_ismart", "iSmart (IBBL)", AppCategory.BANKING_PAYMENTS),

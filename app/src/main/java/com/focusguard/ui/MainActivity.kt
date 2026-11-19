@@ -80,9 +80,30 @@ class MainActivity : ComponentActivity() {
 
     private fun refreshInstalledApps(customSet: Set<String>) {
         lifecycleScope.launch(Dispatchers.Default) {
-            val apps = repository.getAllInstalledAppsWithStatus(customSet)
+            val installedApps = repository.getAllInstalledAppsWithStatus(customSet).associateBy { it.packageName }.toMutableMap()
+            val approvedRegistry = controller.approvedAppRegistry.loadRegistry()
+
+            // Merge registry entries: Ensure uninstalled approved apps appear in the list
+            for ((pkgName, entry) in approvedRegistry) {
+                if (!installedApps.containsKey(pkgName)) {
+                    installedApps[pkgName] = AppItem(
+                        packageName = pkgName,
+                        displayName = entry.displayName,
+                        category = entry.category,
+                        isEssential = entry.isEssential,
+                        isAllowed = true,
+                        isInstalled = false,
+                        note = "Approved in Registry (Reinstallable)"
+                    )
+                }
+            }
+
+            val mergedList = installedApps.values.sortedWith(
+                compareBy({ !it.isAllowed }, { it.category.ordinal }, { it.displayName })
+            )
+
             withContext(Dispatchers.Main) {
-                installedAppsList = apps
+                installedAppsList = mergedList
             }
         }
     }
@@ -107,15 +128,37 @@ class MainActivity : ComponentActivity() {
 
     private fun addCustomPackage(packageName: String) {
         lifecycleScope.launch {
+            controller.approvedAppRegistry.addApprovedPackage(packageName)
             repository.addCustomAllowedPackage(packageName)
-            Toast.makeText(this@MainActivity, "Added $packageName to allowlist", Toast.LENGTH_SHORT).show()
+            refreshInstalledApps(customAllowedSet)
+            Toast.makeText(this@MainActivity, "Permanently approved $packageName in registry", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun removeCustomPackage(packageName: String) {
         lifecycleScope.launch {
+            controller.approvedAppRegistry.removeApprovedPackage(packageName)
             repository.removeCustomAllowedPackage(packageName)
-            Toast.makeText(this@MainActivity, "Removed $packageName from allowlist", Toast.LENGTH_SHORT).show()
+            refreshInstalledApps(customAllowedSet)
+            Toast.makeText(this@MainActivity, "Removed $packageName from approved registry", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun launchAppStoreReinstall(packageName: String) {
+        try {
+            val intent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("market://details?id=$packageName")).apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            try {
+                val webIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://play.google.com/store/apps/details?id=$packageName")).apply {
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(webIntent)
+            } catch (e2: Exception) {
+                Toast.makeText(this@MainActivity, "Cannot open store for $packageName: ${e2.message}", Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -227,7 +270,8 @@ class MainActivity : ComponentActivity() {
                         installedApps = installedAppsList,
                         customAllowed = customAllowedSet,
                         onAddCustomPackage = { addCustomPackage(it) },
-                        onRemoveCustomPackage = { removeCustomPackage(it) }
+                        onRemoveCustomPackage = { removeCustomPackage(it) },
+                        onReinstallPackage = { launchAppStoreReinstall(it) }
                     )
                     2 -> AdminProvisioningScreen()
                 }
