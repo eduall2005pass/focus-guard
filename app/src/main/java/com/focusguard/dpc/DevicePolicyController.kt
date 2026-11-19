@@ -53,8 +53,9 @@ class DevicePolicyController(private val context: Context) {
             "com.samsung.android.app.omcagent",    // Samsung OMC / Carrier Update Agent
             "com.samsung.android.samsungpass",     // Samsung Pass Framework
             "com.samsung.android.samsungpassautofill", // Samsung Pass Autofill
-            // Google Play system update infrastructure
-            "com.google.android.modulemetadata"
+            // Google Play & System Integration Services
+            "com.google.android.modulemetadata",
+            "com.google.android.googlequicksearchbox" // Preserved for Circle to Search & OCR text copy
         )
     }
 

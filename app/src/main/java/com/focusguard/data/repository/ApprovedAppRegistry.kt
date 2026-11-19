@@ -54,10 +54,17 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.dbbl.mbs.apps.main", "Rocket", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("bd.com.ucb.upay", "Upay", AppCategory.BANKING_PAYMENTS, isPredefined = true),
 
-            // Transportation
+            // Transportation, Delivery & Rides
             ApprovedAppEntry("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION, isPredefined = true),
             ApprovedAppEntry("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION, isPredefined = true),
             ApprovedAppEntry("bd.gov.rapidpass", "Rapid Pass Portal", AppCategory.TRANSPORTATION, isPredefined = true),
+            ApprovedAppEntry("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION, isPredefined = true, note = "Ride, Food & Delivery"),
+            ApprovedAppEntry("com.ubercab", "Uber", AppCategory.TRANSPORTATION, isPredefined = true, note = "Rides & Transit"),
+            ApprovedAppEntry("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION, isPredefined = true, note = "Food & Grocery Delivery"),
+            ApprovedAppEntry("com.usbangla.foodi", "Foodi", AppCategory.TRANSPORTATION, isPredefined = true, note = "Food Delivery by US-Bangla"),
+            ApprovedAppEntry("com.foodiBd", "Foodi (Alt)", AppCategory.TRANSPORTATION, isPredefined = true),
+            ApprovedAppEntry("com.daraz.android", "Daraz", AppCategory.TRANSPORTATION, isPredefined = true, note = "Online Shopping & Delivery"),
+            ApprovedAppEntry("com.chaldal.poached", "Chaldal", AppCategory.TRANSPORTATION, isPredefined = true, note = "Online Grocery Delivery"),
 
             // AI & Study
             ApprovedAppEntry("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY, isPredefined = true),
@@ -76,6 +83,7 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, isPredefined = true, note = "3D Anatomy by Elsevier"),
 
             // Google Productivity
+            ApprovedAppEntry("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true, note = "Email & Communication"),
             ApprovedAppEntry("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
@@ -118,7 +126,8 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.sec.android.soagent", "Samsung OS Update Agent", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.samsung.android.app.omcagent", "Samsung Carrier Agent", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.google.android.modulemetadata", "Google Play System Updates", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
-            ApprovedAppEntry("com.focusguard", "Focus Guard DPC", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true)
+            ApprovedAppEntry("com.focusguard", "Focus Guard DPC", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true, note = "Circle to Search & text copy active")
         )
 
         saveRegistry(predefinedEntries)

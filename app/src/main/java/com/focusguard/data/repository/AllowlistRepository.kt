@@ -54,10 +54,17 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.dbbl.mbs.apps.main", "Rocket (DBBL)", AppCategory.BANKING_PAYMENTS),
         AppItem("bd.com.ucb.upay", "Upay", AppCategory.BANKING_PAYMENTS),
 
-        // Transportation
+        // Transportation, Delivery & Rides
         AppItem("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION),
         AppItem("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION),
         AppItem("bd.gov.rapidpass", "Rapid Pass Portal", AppCategory.TRANSPORTATION),
+        AppItem("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION, note = "Ride, Food, Courier & Delivery"),
+        AppItem("com.ubercab", "Uber", AppCategory.TRANSPORTATION, note = "Rides & Transit"),
+        AppItem("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION, note = "Food & Grocery Delivery"),
+        AppItem("com.usbangla.foodi", "Foodi", AppCategory.TRANSPORTATION, note = "Food Delivery by US-Bangla"),
+        AppItem("com.foodiBd", "Foodi (Alt)", AppCategory.TRANSPORTATION),
+        AppItem("com.daraz.android", "Daraz", AppCategory.TRANSPORTATION, note = "Online Shopping & Delivery"),
+        AppItem("com.chaldal.poached", "Chaldal", AppCategory.TRANSPORTATION, note = "Online Grocery Delivery"),
 
         // AI and Study
         AppItem("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY),
@@ -76,6 +83,7 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, note = "3D Anatomy by Elsevier"),
 
         // Google Productivity
+        AppItem("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY, note = "Email & Communication"),
         AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
@@ -147,7 +155,8 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.google.android.packageinstaller", "Package Installer", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.android.packageinstaller", "Package Installer (AOSP)", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.google.android.permissioncontroller", "Permission Controller", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-        AppItem("com.focusguard", "Focus Guard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Protected DPC Controller")
+        AppItem("com.focusguard", "Focus Guard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Protected DPC Controller"),
+        AppItem("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Circle to Search & text copy active; search/feed guarded")
     )
 
     /**

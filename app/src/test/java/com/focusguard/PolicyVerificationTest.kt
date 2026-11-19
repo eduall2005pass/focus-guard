@@ -22,9 +22,14 @@ class PolicyVerificationTest {
         "com.konasl.nagad",
         "com.dbbl.mbs.apps.main",
 
-        // Transportation
+        // Transportation & Delivery
         "com.google.android.apps.maps",
         "bd.gov.dmtcl.rapidpass",
+        "com.pathao.user",
+        "com.ubercab",
+        "com.global.foodpanda.android",
+        "com.usbangla.foodi",
+        "com.daraz.android",
 
         // AI & Study
         "com.openai.chatgpt",
@@ -41,6 +46,7 @@ class PolicyVerificationTest {
         "com.elsevier.threeD4Medical.CompleteAnatomy",
 
         // Google Productivity
+        "com.google.android.gm",
         "com.google.android.apps.docs",
         "com.google.android.apps.docs.editors.docs",
         "com.google.android.apps.docs.editors.sheets",
@@ -53,7 +59,8 @@ class PolicyVerificationTest {
         "teletalk.teletalkcustomerapp",
         "com.sec.android.app.music",
         "com.samsung.android.samsungpass",
-        "com.samsung.android.samsungpassautofill"
+        "com.samsung.android.samsungpassautofill",
+        "com.google.android.googlequicksearchbox"
     )
 
     // Test blocked packages required by specification
@@ -97,6 +104,11 @@ class PolicyVerificationTest {
             AppItem("com.dbbl.mbs.apps.main", "Rocket", AppCategory.BANKING_PAYMENTS),
             AppItem("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION),
             AppItem("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION),
+            AppItem("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION),
+            AppItem("com.ubercab", "Uber", AppCategory.TRANSPORTATION),
+            AppItem("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION),
+            AppItem("com.usbangla.foodi", "Foodi", AppCategory.TRANSPORTATION),
+            AppItem("com.daraz.android", "Daraz", AppCategory.TRANSPORTATION),
             AppItem("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY),
             AppItem("com.anthropic.claude", "Claude", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.bard", "Gemini", AppCategory.AI_STUDY),
@@ -109,6 +121,7 @@ class PolicyVerificationTest {
             AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY),
             AppItem("com.a3d4medical.completeanatomy", "Complete Anatomy", AppCategory.AI_STUDY),
             AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY),
+            AppItem("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
@@ -119,7 +132,8 @@ class PolicyVerificationTest {
             AppItem("teletalk.teletalkcustomerapp", "My Teletalk", AppCategory.ESSENTIAL_SYSTEM),
             AppItem("com.sec.android.app.music", "Samsung Music", AppCategory.ESSENTIAL_SYSTEM),
             AppItem("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-            AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
+            AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
         ).associateBy { it.packageName }
 
         for (pkg in expectedAllowedPackages) {
@@ -195,7 +209,8 @@ class PolicyVerificationTest {
             "com.google.android.gms",              // Google Play Services
             "com.google.android.webview",          // Android System WebView
             "com.samsung.android.samsungpass",     // Samsung Pass Framework
-            "com.samsung.android.samsungpassautofill" // Samsung Pass Autofill
+            "com.samsung.android.samsungpassautofill", // Samsung Pass Autofill
+            "com.google.android.googlequicksearchbox" // Google App Framework (Circle to Search & OCR)
         )
         for (pkg in requiredUpdatePackages) {
             assertTrue("Critical update package must be protected in CRITICAL_SYSTEM_PACKAGES: $pkg", criticalSet.contains(pkg))
@@ -267,6 +282,22 @@ class PolicyVerificationTest {
         )
         for (pkg in newPkgs) {
             assertTrue("Package must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
+        }
+    }
+
+    @Test
+    fun verifyDeliveryShoppingGmailAndGoogleFrameworkInRegistryAndAllowlist() {
+        val verifiedPkgs = listOf(
+            "com.pathao.user",
+            "com.ubercab",
+            "com.global.foodpanda.android",
+            "com.usbangla.foodi",
+            "com.daraz.android",
+            "com.google.android.gm",
+            "com.google.android.googlequicksearchbox"
+        )
+        for (pkg in verifiedPkgs) {
+            assertTrue("Delivery/Shopping/Gmail/Google Framework must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
         }
     }
 

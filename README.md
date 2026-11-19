@@ -36,8 +36,14 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | Nagad | `com.konasl.nagad` | MFS |
 | | Rocket (DBBL) | `com.dbbl.mbs.apps.main` | MFS |
 | | Upay | `bd.com.ucb.upay` | MFS |
-| **Transportation** | Google Maps | `com.google.android.apps.maps` | Navigation |
+| **Transportation & Delivery** | Google Maps | `com.google.android.apps.maps` | Navigation |
 | | Rapid Pass | `bd.gov.dmtcl.rapidpass`, `bd.gov.rapidpass` | Metro & transit |
+| | Pathao | `com.pathao.user` | Rides, Food, Courier & Delivery |
+| | Uber | `com.ubercab` | Rides & Transit |
+| | Foodpanda | `com.global.foodpanda.android` | Food & Grocery Delivery |
+| | Foodi | `com.usbangla.foodi` | Food Delivery by US-Bangla |
+| | Daraz | `com.daraz.android` | Online Shopping & Logistics |
+| | Chaldal | `com.chaldal.poached` | Online Grocery Delivery |
 | **AI & Study** | ChatGPT | `com.openai.chatgpt` | AI Assistant |
 | | Claude | `com.anthropic.claude` | AI Assistant |
 | | Gemini | `com.google.android.apps.bard` | AI Assistant |
@@ -50,7 +56,8 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | Mahfil | `com.mahfil.app` | Islamic Discussions & Lectures |
 | | Al Quran (Tafsir & by Word) | `com.greentech.quran` | Quran Study & Tafsir by Greentech |
 | | Complete Anatomy | `com.a3d4medical.completeanatomy`, `com.elsevier.threeD4Medical.CompleteAnatomy` | 3D Medical Anatomy Learning by Elsevier |
-| **Google Productivity** | Google Drive | `com.google.android.apps.docs` | Cloud Storage |
+| **Google Productivity** | Gmail | `com.google.android.gm` | Email & Communication |
+| | Google Drive | `com.google.android.apps.docs` | Cloud Storage |
 | | Google Docs | `com.google.android.apps.docs.editors.docs` | Document Editor |
 | | Google Sheets | `com.google.android.apps.docs.editors.sheets` | Spreadsheet Editor |
 | | Google Photos | `com.google.android.apps.photos` | Cloud Gallery |
@@ -65,6 +72,7 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | Samsung Music | `com.sec.android.app.music` | Local Audio Player |
 | | My Teletalk | `teletalk.teletalkcustomerapp` | Teletalk SIM & Carrier Self-Care |
 | | Samsung Pass & Wallet | `com.samsung.android.samsungpass`, `com.samsung.android.samsungpassautofill`, `com.samsung.android.spay` | Biometric Credentials & Passkeys |
+| | Google App Services | `com.google.android.googlequicksearchbox` | **Circle to Search & OCR text copy active** (Discover feed & search browsing blocked) |
 | | Android System WebView | `com.google.android.webview` | **Crucial for auth/banking** |
 | | Google Play Services | `com.google.android.gms`, `com.google.android.gsf` | Core Services |
 | | Google Play Store | `com.android.vending` | App updates |

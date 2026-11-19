@@ -65,7 +65,49 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
             return
         }
 
-        // 2. WhatsApp Communities Guard
+        // 2. Google App Interception (Preserving Circle to Search & OCR text copy, blocking Discover feed and Search UI)
+        if (pkg == "com.google.android.googlequicksearchbox") {
+            val className = event.className?.toString() ?: ""
+
+            // Allow Circle to Search, Lens OCR, text selection, and system overlay services
+            val isCircleToSearchOrOcr = className.contains("Lens", ignoreCase = true) ||
+                    className.contains("Omnient", ignoreCase = true) ||
+                    className.contains("CircleToSearch", ignoreCase = true) ||
+                    className.contains("TextSelection", ignoreCase = true) ||
+                    className.contains("OpaOverlay", ignoreCase = true) ||
+                    className.contains("TouchOutside", ignoreCase = true)
+
+            if (isCircleToSearchOrOcr) {
+                return
+            }
+
+            // Block distracting Discover Feed, Web Search, or direct SearchActivity
+            val isDiscoverOrSearch = className.contains("SearchActivity", ignoreCase = true) ||
+                    className.contains("Discover", ignoreCase = true) ||
+                    className.contains("Sidekick", ignoreCase = true) ||
+                    className.contains("Velvet", ignoreCase = true) ||
+                    className.contains("Searchgate", ignoreCase = true) ||
+                    className.contains("Browser", ignoreCase = true)
+
+            if (isDiscoverOrSearch) {
+                val now = System.currentTimeMillis()
+                if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
+                    lastBlockTimestamp = now
+                    Log.w(TAG, "Google Discover/Search interface detected ($className). Closing to prevent web browsing distractions.")
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    mainHandler.post {
+                        Toast.makeText(
+                            applicationContext,
+                            "Focus Guard: Google Search & Discover feed are restricted. Circle to Search and text copy remain active.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            }
+            return
+        }
+
+        // 3. WhatsApp Communities Guard
         if (pkg != "com.whatsapp" && pkg != "com.whatsapp.w4b") {
             // Ignore other events as defense-in-depth
             return
