@@ -45,6 +45,9 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | Google PDF Viewer | `com.google.android.apps.pdfviewer` | Document Viewer |
 | | Adobe Acrobat | `com.adobe.reader` | PDF Viewer |
 | | Samsung Notes | `com.samsung.android.app.notes` | Note-taking |
+| | Muslim Bangla | `com.tos.namajtime`, `com.muslimbangla` | Prayer Times, Quran & Dua |
+| | iHadis | `com.ihadis.ihadis` | Authentic Hadith Collection |
+| | Mahfil | `com.mahfil.app` | Islamic Discussions & Lectures |
 | **Google Productivity** | Google Drive | `com.google.android.apps.docs` | Cloud Storage |
 | | Google Docs | `com.google.android.apps.docs.editors.docs` | Document Editor |
 | | Google Sheets | `com.google.android.apps.docs.editors.sheets` | Spreadsheet Editor |

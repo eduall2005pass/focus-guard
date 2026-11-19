@@ -67,6 +67,10 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.google.android.apps.pdfviewer", "Google PDF Viewer", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.adobe.reader", "Adobe Acrobat", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY, isPredefined = true),
+            ApprovedAppEntry("com.tos.namajtime", "Muslim Bangla", AppCategory.AI_STUDY, isPredefined = true, note = "Prayer Times & Quran"),
+            ApprovedAppEntry("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY, isPredefined = true, note = "Prayer Times & Islamic Tools"),
+            ApprovedAppEntry("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY, isPredefined = true, note = "Authentic Hadith Collection"),
+            ApprovedAppEntry("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY, isPredefined = true, note = "Islamic Discussions & Waz"),
 
             // Google Productivity
             ApprovedAppEntry("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),

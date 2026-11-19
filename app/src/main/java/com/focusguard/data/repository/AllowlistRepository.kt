@@ -67,6 +67,10 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.google.android.apps.pdfviewer", "Google PDF Viewer", AppCategory.AI_STUDY),
         AppItem("com.adobe.reader", "Adobe Acrobat Reader", AppCategory.AI_STUDY),
         AppItem("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY),
+        AppItem("com.tos.namajtime", "Muslim Bangla", AppCategory.AI_STUDY, note = "Prayer Times & Quran"),
+        AppItem("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY, note = "Prayer Times & Islamic Tools"),
+        AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY, note = "Authentic Hadith Collection"),
+        AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY, note = "Islamic Discussions & Waz"),
 
         // Google Productivity
         AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),

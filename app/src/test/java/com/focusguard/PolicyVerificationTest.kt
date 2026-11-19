@@ -32,6 +32,10 @@ class PolicyVerificationTest {
         "com.google.android.apps.bard",
         "com.google.android.apps.notebooklm",
         "com.samsung.android.app.notes",
+        "com.tos.namajtime",
+        "com.muslimbangla",
+        "com.ihadis.ihadis",
+        "com.mahfil.app",
 
         // Google Productivity
         "com.google.android.apps.docs",
@@ -91,6 +95,10 @@ class PolicyVerificationTest {
             AppItem("com.google.android.apps.bard", "Gemini", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.notebooklm", "NotebookLM", AppCategory.AI_STUDY),
             AppItem("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY),
+            AppItem("com.tos.namajtime", "Muslim Bangla", AppCategory.AI_STUDY),
+            AppItem("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY),
+            AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY),
+            AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
@@ -205,6 +213,19 @@ class PolicyVerificationTest {
     fun verifyBrilliantConnectInRegistryAndAllowlist() {
         val brilliantPkg = "com.brilliant.connect.com.bd"
         assertTrue("Brilliant Connect must be in expectedAllowedPackages", expectedAllowedPackages.contains(brilliantPkg))
+    }
+
+    @Test
+    fun verifyIslamicAppsInRegistryAndAllowlist() {
+        val islamicPkgs = listOf(
+            "com.tos.namajtime",
+            "com.muslimbangla",
+            "com.ihadis.ihadis",
+            "com.mahfil.app"
+        )
+        for (pkg in islamicPkgs) {
+            assertTrue("Islamic app must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
+        }
     }
 
     @Test
