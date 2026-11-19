@@ -71,6 +71,7 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY, note = "Prayer Times & Islamic Tools"),
         AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY, note = "Authentic Hadith Collection"),
         AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY, note = "Islamic Discussions & Waz"),
+        AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY, note = "Quran Study & Tafsir"),
 
         // Google Productivity
         AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),

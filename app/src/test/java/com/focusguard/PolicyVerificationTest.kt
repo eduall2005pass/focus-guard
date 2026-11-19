@@ -36,6 +36,7 @@ class PolicyVerificationTest {
         "com.muslimbangla",
         "com.ihadis.ihadis",
         "com.mahfil.app",
+        "com.greentech.quran",
 
         // Google Productivity
         "com.google.android.apps.docs",
@@ -99,6 +100,7 @@ class PolicyVerificationTest {
             AppItem("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY),
             AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY),
             AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY),
+            AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
@@ -221,7 +223,8 @@ class PolicyVerificationTest {
             "com.tos.namajtime",
             "com.muslimbangla",
             "com.ihadis.ihadis",
-            "com.mahfil.app"
+            "com.mahfil.app",
+            "com.greentech.quran"
         )
         for (pkg in islamicPkgs) {
             assertTrue("Islamic app must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
