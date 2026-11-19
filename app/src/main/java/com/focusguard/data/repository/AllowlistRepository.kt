@@ -125,6 +125,18 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.android.providers.downloads", "Download Manager", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.android.providers.downloads.ui", "Download UI", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
 
+        // Local Media & Utilities
+        AppItem("com.sec.android.app.music", "Samsung Music", AppCategory.ESSENTIAL_SYSTEM, note = "Local audio player"),
+        AppItem("teletalk.teletalkcustomerapp", "My Teletalk", AppCategory.ESSENTIAL_SYSTEM, note = "Teletalk carrier self-care"),
+        AppItem("com.teletalk.myteletalk", "My Teletalk (Alt)", AppCategory.ESSENTIAL_SYSTEM, note = "Teletalk self-care"),
+        AppItem("bd.gov.teletalk.myteletalk", "My Teletalk (Gov)", AppCategory.ESSENTIAL_SYSTEM, note = "Teletalk self-care"),
+
+        // Samsung Pass & Security Credentials
+        AppItem("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Biometric credentials & passkeys"),
+        AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.samsung.android.spay", "Samsung Wallet / Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.samsung.android.spaymini", "Samsung Pay Mini", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+
         // Critical Framework & Safety Components (NEVER HIDE)
         AppItem("com.google.android.webview", "Android System WebView", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Preserves in-app web auth and banking"),
         AppItem("com.google.android.gms", "Google Play Services", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Push notifications & security"),

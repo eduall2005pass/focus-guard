@@ -62,6 +62,9 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | File Manager | `com.google.android.apps.nbu.files`, `com.android.documentsui` | Local Files |
 | | Clock & Calculator | Google / OEM Clock & Calculator | Utilities |
 | | Keyboards | Gboard, Samsung Keyboard, SwiftKey, OpenBoard | Input Methods |
+| | Samsung Music | `com.sec.android.app.music` | Local Audio Player |
+| | My Teletalk | `teletalk.teletalkcustomerapp` | Teletalk SIM & Carrier Self-Care |
+| | Samsung Pass & Wallet | `com.samsung.android.samsungpass`, `com.samsung.android.samsungpassautofill`, `com.samsung.android.spay` | Biometric Credentials & Passkeys |
 | | Android System WebView | `com.google.android.webview` | **Crucial for auth/banking** |
 | | Google Play Services | `com.google.android.gms`, `com.google.android.gsf` | Core Services |
 | | Google Play Store | `com.android.vending` | App updates |

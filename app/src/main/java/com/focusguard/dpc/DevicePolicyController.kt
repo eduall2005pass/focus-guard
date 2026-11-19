@@ -51,6 +51,8 @@ class DevicePolicyController(private val context: Context) {
             "com.wssyncmldm",                      // Samsung FOTA / OS Firmware Update
             "com.sec.android.soagent",                   // Samsung System Update Agent
             "com.samsung.android.app.omcagent",    // Samsung OMC / Carrier Update Agent
+            "com.samsung.android.samsungpass",     // Samsung Pass Framework
+            "com.samsung.android.samsungpassautofill", // Samsung Pass Autofill
             // Google Play system update infrastructure
             "com.google.android.modulemetadata"
         )

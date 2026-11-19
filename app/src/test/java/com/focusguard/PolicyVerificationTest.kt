@@ -49,7 +49,11 @@ class PolicyVerificationTest {
         // Critical System Components
         "com.google.android.webview",
         "com.google.android.gms",
-        "com.android.vending"
+        "com.android.vending",
+        "teletalk.teletalkcustomerapp",
+        "com.sec.android.app.music",
+        "com.samsung.android.samsungpass",
+        "com.samsung.android.samsungpassautofill"
     )
 
     // Test blocked packages required by specification
@@ -111,7 +115,11 @@ class PolicyVerificationTest {
             AppItem("com.google.android.apps.photos", "Google Photos", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.webview", "System WebView", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
             AppItem("com.google.android.gms", "Play Services", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-            AppItem("com.android.vending", "Play Store", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
+            AppItem("com.android.vending", "Play Store", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("teletalk.teletalkcustomerapp", "My Teletalk", AppCategory.ESSENTIAL_SYSTEM),
+            AppItem("com.sec.android.app.music", "Samsung Music", AppCategory.ESSENTIAL_SYSTEM),
+            AppItem("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
         ).associateBy { it.packageName }
 
         for (pkg in expectedAllowedPackages) {
@@ -185,7 +193,9 @@ class PolicyVerificationTest {
             "com.google.android.modulemetadata",   // Google Play System Updates (Mainline)
             "com.android.vending",                 // Google Play Store
             "com.google.android.gms",              // Google Play Services
-            "com.google.android.webview"           // Android System WebView
+            "com.google.android.webview",          // Android System WebView
+            "com.samsung.android.samsungpass",     // Samsung Pass Framework
+            "com.samsung.android.samsungpassautofill" // Samsung Pass Autofill
         )
         for (pkg in requiredUpdatePackages) {
             assertTrue("Critical update package must be protected in CRITICAL_SYSTEM_PACKAGES: $pkg", criticalSet.contains(pkg))
@@ -243,6 +253,20 @@ class PolicyVerificationTest {
         )
         for (pkg in anatomyPkgs) {
             assertTrue("Complete Anatomy package must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
+        }
+    }
+
+    @Test
+    fun verifyTeletalkSamsungMusicAndPassInRegistryAndAllowlist() {
+        val newPkgs = listOf(
+            "teletalk.teletalkcustomerapp",
+            "com.sec.android.app.music",
+            "com.samsung.android.samsungpass",
+            "com.samsung.android.samsungpassautofill",
+            "com.ibbl.cellfin"
+        )
+        for (pkg in newPkgs) {
+            assertTrue("Package must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
         }
     }
 
