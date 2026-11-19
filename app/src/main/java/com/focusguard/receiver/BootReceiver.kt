@@ -24,6 +24,12 @@ class BootReceiver : BroadcastReceiver() {
                 return
             }
 
+            // Anti-Safe-Mode Trap: If device ever enters Safe Mode, reboot immediately
+            if (controller.checkAndRemediateSafeMode()) {
+                Log.w(TAG, "Safe Mode intercepted! Device reboot triggered back to normal mode.")
+                return
+            }
+
             val repository = AllowlistRepository(context)
             val pendingResult = goAsync()
 

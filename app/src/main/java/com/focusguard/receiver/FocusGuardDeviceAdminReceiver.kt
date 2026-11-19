@@ -35,6 +35,8 @@ class FocusGuardDeviceAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
         super.onEnabled(context, intent)
         Log.i(TAG, "Focus Guard Device Admin enabled.")
+        val controller = DevicePolicyController(context)
+        controller.checkAndRemediateSafeMode()
     }
 
     override fun onDisabled(context: Context, intent: Intent) {

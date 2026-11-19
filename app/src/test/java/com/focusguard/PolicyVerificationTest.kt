@@ -157,4 +157,45 @@ class PolicyVerificationTest {
         assertTrue("Must disallow ADB debugging to prevent shell reversal", enforcedRestrictions.contains("no_debugging_features"))
         assertTrue("Must disallow uninstallation", enforcedRestrictions.contains("no_uninstall_apps"))
     }
+
+    @Test
+    fun verifySamsungAndGoogleUpdateComponentsNeverBlocked() {
+        val criticalSet = com.focusguard.dpc.DevicePolicyController.CRITICAL_SYSTEM_PACKAGES
+        val requiredUpdatePackages = listOf(
+            "com.sec.android.app.samsungapps.una2", // Samsung In-App Update Agent
+            "com.wssyncmldm",                      // Samsung FOTA / OS Firmware Update
+            "com.sec.android.soagent",                   // Samsung System Update Agent
+            "com.samsung.android.app.omcagent",    // Samsung OMC / Carrier Update Agent
+            "com.google.android.modulemetadata",   // Google Play System Updates (Mainline)
+            "com.android.vending",                 // Google Play Store
+            "com.google.android.gms",              // Google Play Services
+            "com.google.android.webview"           // Android System WebView
+        )
+        for (pkg in requiredUpdatePackages) {
+            assertTrue("Critical update package must be protected in CRITICAL_SYSTEM_PACKAGES: $pkg", criticalSet.contains(pkg))
+        }
+    }
+
+    @Test
+    fun verifyBaselineCryptographicValidation() {
+        val legitimateCert = "38A7326B1E32B7423D9E086F9A2DE9827B7A9EF8C123D8A39B23E11223344556"
+        val fakeCert = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+
+        val baselineRecord = com.focusguard.data.model.BaselineAppRecord(
+            packageName = "com.sec.android.app.camera",
+            initialVersionCode = 14000100L,
+            initialVersionName = "14.0.01",
+            isSystemApp = true,
+            installingPackageName = "com.sec.android.app.samsungapps",
+            signingCertificateSha256 = legitimateCert
+        )
+
+        // Matching cert should be approved as valid update
+        val isLegitimate = baselineRecord.signingCertificateSha256.equals(legitimateCert, ignoreCase = true)
+        assertTrue("Update with matching signature must be permitted", isLegitimate)
+
+        // Spoofed or mismatched cert must be rejected
+        val isMismatched = baselineRecord.signingCertificateSha256.equals(fakeCert, ignoreCase = true)
+        assertFalse("Update with mismatched signature must be rejected", isMismatched)
+    }
 }

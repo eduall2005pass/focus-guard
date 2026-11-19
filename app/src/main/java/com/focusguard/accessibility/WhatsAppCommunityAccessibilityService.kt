@@ -46,8 +46,28 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
         if (event == null) return
 
         val pkg = event.packageName?.toString() ?: return
+
+        // 1. Samsung Galaxy Store UI Interception (Preserving background updates, blocking user browsing)
+        if (pkg == "com.sec.android.app.samsungapps") {
+            val now = System.currentTimeMillis()
+            if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
+                lastBlockTimestamp = now
+                Log.w(TAG, "User attempted to open Galaxy Store UI. Redirecting to home while preserving background updates.")
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                mainHandler.post {
+                    Toast.makeText(
+                        applicationContext,
+                        "Focus Guard: Galaxy Store browsing is restricted. Background updates for Samsung components remain active.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+            return
+        }
+
+        // 2. WhatsApp Communities Guard
         if (pkg != "com.whatsapp" && pkg != "com.whatsapp.w4b") {
-            // Ignore non-WhatsApp events as defense-in-depth
+            // Ignore other events as defense-in-depth
             return
         }
 

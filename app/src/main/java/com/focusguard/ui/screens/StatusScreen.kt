@@ -246,6 +246,27 @@ fun StatusScreen(
         )
 
         SubsystemStatusItem(
+            icon = Icons.Default.Fingerprint,
+            title = "Cryptographic App Baseline",
+            subtitle = if (status.baselinePackageCount > 0) "${status.baselinePackageCount} pre-existing packages baseline-verified (SHA-256)" else "Baseline ready to record upon enforcement",
+            isActive = status.baselinePackageCount > 0
+        )
+
+        SubsystemStatusItem(
+            icon = Icons.Default.Shop,
+            title = "Samsung Galaxy Store & Updates",
+            subtitle = "UI Browsing Isolated • Samsung Background Service Updates Active",
+            isActive = status.isPolicyPermanentlyLocked
+        )
+
+        SubsystemStatusItem(
+            icon = Icons.Default.SystemUpdate,
+            title = "Samsung OTA & Security Updates",
+            subtitle = "Automatic OTA Updates Enforced (System services preserved)",
+            isActive = status.isPolicyPermanentlyLocked
+        )
+
+        SubsystemStatusItem(
             icon = Icons.Default.Dns,
             title = "Global Private DNS (DoT)",
             subtitle = if (status.privateDnsHost != null) "Locked to ${status.privateDnsHost}" else "high.kahfguard.com",

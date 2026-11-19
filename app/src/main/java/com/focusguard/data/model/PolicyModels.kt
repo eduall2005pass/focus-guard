@@ -11,6 +11,16 @@ data class PolicyEnforcementResult(
     val errors: List<String> = emptyList()
 )
 
+data class BaselineAppRecord(
+    val packageName: String,
+    val initialVersionCode: Long,
+    val initialVersionName: String,
+    val isSystemApp: Boolean,
+    val installingPackageName: String?,
+    val signingCertificateSha256: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
 data class DeviceOwnerStatus(
     val isDeviceOwner: Boolean = false,
     val isDeviceAdmin: Boolean = false,
@@ -24,5 +34,6 @@ data class DeviceOwnerStatus(
     val isUnknownSourcesBlocked: Boolean = false,
     val isAdbDebuggingBlocked: Boolean = false,
     val isPolicyPermanentlyLocked: Boolean = false,
+    val baselinePackageCount: Int = 0,
     val activeRestrictions: List<String> = emptyList()
 )

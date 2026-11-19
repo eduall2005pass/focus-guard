@@ -19,10 +19,13 @@ class DevicePolicyController(private val context: Context) {
     private val userManager = context.getSystemService(Context.USER_SERVICE) as UserManager
     private val adminComponent = ComponentName(context, FocusGuardDeviceAdminReceiver::class.java)
     private val repository = AllowlistRepository(context)
+    val baselineManager = com.focusguard.data.repository.BaselineInventoryManager(context)
 
     companion object {
         private const val TAG = "FocusGuard_DPC"
         const val KAHF_GUARD_DNS_HOST = "high.kahfguard.com"
+        const val GALAXY_STORE_PACKAGE = "com.sec.android.app.samsungapps"
+        const val KNOX_SERVICE_PLUGIN_PACKAGE = "com.samsung.android.knox.ksp"
 
         // Critical safety set: packages that MUST NEVER be hidden under any condition
         val CRITICAL_SYSTEM_PACKAGES = setOf(
@@ -41,7 +44,14 @@ class DevicePolicyController(private val context: Context) {
             "com.android.providers.settings",
             "com.android.keychain",
             "com.android.phone",
-            "com.android.server.telecom"
+            "com.android.server.telecom",
+            // Samsung essential update & firmware maintenance components
+            "com.sec.android.app.samsungapps.una2", // Samsung In-App Update Agent
+            "com.wssyncmldm",                      // Samsung FOTA / OS Firmware Update
+            "com.sec.android.soagent",                   // Samsung System Update Agent
+            "com.samsung.android.app.omcagent",    // Samsung OMC / Carrier Update Agent
+            // Google Play system update infrastructure
+            "com.google.android.modulemetadata"
         )
     }
 
@@ -51,6 +61,32 @@ class DevicePolicyController(private val context: Context) {
 
     fun isDeviceAdmin(): Boolean {
         return dpm.isAdminActive(adminComponent)
+    }
+
+    /**
+     * Checks if the device was booted into Safe Mode.
+     * If Safe Mode is detected, automatically forces an immediate reboot back to normal mode.
+     */
+    fun checkAndRemediateSafeMode(): Boolean {
+        if (context.packageManager.isSafeMode) {
+            Log.e(TAG, "CRITICAL: Safe Mode detected on device! Forcing reboot back to normal mode.")
+            rebootToNormalMode()
+            return true
+        }
+        return false
+    }
+
+    /**
+     * Forces immediate reboot of the device back to normal mode using Device Owner privilege.
+     */
+    fun rebootToNormalMode() {
+        if (!isDeviceOwner()) return
+        try {
+            Log.w(TAG, "Rebooting device via Device Policy Controller...")
+            dpm.reboot(adminComponent)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to execute device reboot: ${e.message}", e)
+        }
     }
 
     fun getDeviceOwnerStatus(): DeviceOwnerStatus {
@@ -100,6 +136,7 @@ class DevicePolicyController(private val context: Context) {
 
         val isAdbDebuggingBlocked = activeRestrictions.contains(UserManager.DISALLOW_DEBUGGING_FEATURES)
         val isPolicyPermanentlyLocked = isDO && isAdbDebuggingBlocked && isUninstallBlocked
+        val baselineCount = baselineManager.loadBaseline().size
 
         return DeviceOwnerStatus(
             isDeviceOwner = isDO,
@@ -114,8 +151,41 @@ class DevicePolicyController(private val context: Context) {
             isUnknownSourcesBlocked = isUnknownSourcesBlocked,
             isAdbDebuggingBlocked = isAdbDebuggingBlocked,
             isPolicyPermanentlyLocked = isPolicyPermanentlyLocked,
+            baselinePackageCount = baselineCount,
             activeRestrictions = activeRestrictions
         )
+    }
+
+    /**
+     * Configures Samsung Knox Service Plugin (KSP) via Android Enterprise Managed Configurations (OEMConfig)
+     * if KSP is present on the device.
+     */
+    fun configureKnoxServicePlugin(): Boolean {
+        if (!isDeviceOwner()) return false
+        return try {
+            // Check if Knox Service Plugin is installed
+            context.packageManager.getPackageInfo(KNOX_SERVICE_PLUGIN_PACKAGE, 0)
+
+            val kspRestrictions = android.os.Bundle().apply {
+                val appPolicies = android.os.Bundle().apply {
+                    putBoolean("enableApplicationManagementPolicies", true)
+                    // On One UI 8.0/Knox 3.13, setting showGalaxyStoreApp to "Hide"
+                    // conceals the Galaxy Store UI while preserving underlying Samsung update daemons
+                    putString("showGalaxyStoreApp", "Hide")
+                }
+                putBundle("applicationManagementPolicies", appPolicies)
+            }
+
+            dpm.setApplicationRestrictions(adminComponent, KNOX_SERVICE_PLUGIN_PACKAGE, kspRestrictions)
+            Log.i(TAG, "Successfully applied Knox Service Plugin OEMConfig for Galaxy Store isolation.")
+            true
+        } catch (e: PackageManager.NameNotFoundException) {
+            Log.d(TAG, "Knox Service Plugin not installed. Scoped presentation interceptor will guard Galaxy Store.")
+            false
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to apply KSP restrictions: ${e.message}", e)
+            false
+        }
     }
 
     /**
@@ -146,7 +216,29 @@ class DevicePolicyController(private val context: Context) {
             errors.add("Failed to lock uninstall for Focus Guard: ${e.message}")
         }
 
-        // 2. Enforce System User Restrictions (Including disabling ADB and uninstallation)
+        // 2. Initialize or Refresh Cryptographic Baseline Inventory of Existing Apps
+        try {
+            val baselineCount = baselineManager.createBaselineIfNotExists()
+            Log.i(TAG, "Baseline inventory active with $baselineCount verified packages.")
+        } catch (e: Exception) {
+            errors.add("Failed to initialize baseline inventory: ${e.message}")
+        }
+
+        // 3. Configure Automatic Samsung OTA Firmware Updates
+        try {
+            dpm.setSystemUpdatePolicy(
+                adminComponent,
+                android.app.admin.SystemUpdatePolicy.createAutomaticInstallPolicy()
+            )
+            Log.i(TAG, "Automatic Samsung OTA update policy enforced.")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not set automatic system update policy: ${e.message}")
+        }
+
+        // 4. Configure Knox Service Plugin (OEMConfig) for Galaxy Store Isolation
+        configureKnoxServicePlugin()
+
+        // 5. Enforce System User Restrictions (Including disabling ADB and uninstallation)
         val standardRestrictions = mutableListOf(
             UserManager.DISALLOW_CONFIG_VPN,
             UserManager.DISALLOW_NETWORK_RESET,
@@ -175,7 +267,7 @@ class DevicePolicyController(private val context: Context) {
             }
         }
 
-        // 3. Configure Private DNS to high.kahfguard.com (DNS-over-TLS)
+        // 6. Configure Private DNS to high.kahfguard.com (DNS-over-TLS)
         var dnsStatus = "Unsupported on this Android version"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
@@ -192,7 +284,7 @@ class DevicePolicyController(private val context: Context) {
             }
         }
 
-        // 4. Enforce Application Allowlist / Blocklist on all installed packages
+        // 7. Enforce Application Allowlist / Blocklist on all installed packages
         val pm = context.packageManager
         val installedPackages = pm.getInstalledPackages(PackageManager.GET_META_DATA)
 
@@ -206,6 +298,18 @@ class DevicePolicyController(private val context: Context) {
                     dpm.setApplicationHidden(adminComponent, pkgName, false)
                     dpm.setPackagesSuspended(adminComponent, arrayOf(pkgName), false)
                     dpm.setUninstallBlocked(adminComponent, pkgName, true)
+                } catch (ignored: Exception) {
+                }
+                continue
+            }
+
+            // Special handling for Samsung Galaxy Store on One UI 8.0:
+            // Do NOT hide the package, because doing so halts background Samsung app and service updates.
+            // The UI is isolated via Knox KSP OEMConfig and the Focus Guard foreground presentation interceptor.
+            if (pkgName == GALAXY_STORE_PACKAGE) {
+                try {
+                    dpm.setApplicationHidden(adminComponent, pkgName, false)
+                    dpm.setPackagesSuspended(adminComponent, arrayOf(pkgName), false)
                 } catch (ignored: Exception) {
                 }
                 continue
@@ -267,25 +371,71 @@ class DevicePolicyController(private val context: Context) {
 
     /**
      * Event-driven evaluation when a package is added or replaced.
+     * Uses cryptographic baseline validation to permit updates to pre-existing apps
+     * while intercepting unauthorized new apps.
      */
     fun evaluatePackage(packageName: String, customAllowed: Set<String>) {
         if (!isDeviceOwner()) return
-        if (packageName == context.packageName || CRITICAL_SYSTEM_PACKAGES.contains(packageName)) return
+        if (packageName == context.packageName || CRITICAL_SYSTEM_PACKAGES.contains(packageName) || packageName == GALAXY_STORE_PACKAGE) return
 
+        // 1. Check if this is a legitimate update to an existing baseline package
+        if (baselineManager.isLegitimateBaselineUpdate(packageName)) {
+            Log.i(TAG, "Legitimate update to baseline package $packageName verified with matching signature. Permitting.")
+            try {
+                dpm.setApplicationHidden(adminComponent, packageName, false)
+                dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), false)
+                dpm.setUninstallBlocked(adminComponent, packageName, true)
+            } catch (e: Exception) {
+                Log.w(TAG, "Error ensuring unhidden state for updated package $packageName: ${e.message}")
+            }
+            return
+        }
+
+        // 2. Check if this is an explicitly approved new application
         val isAllowed = repository.isExplicitlyAllowed(packageName, customAllowed)
         val isBlocked = repository.isExplicitlyBlocked(packageName)
 
-        if (!isAllowed || isBlocked) {
-            Log.i(TAG, "Newly installed package $packageName is unapproved. Hiding immediately.")
+        if (isAllowed && !isBlocked) {
+            Log.i(TAG, "New package $packageName matches administrator allowlist. Permitting and updating baseline.")
+            baselineManager.forceRefreshBaseline()
             try {
-                dpm.setApplicationHidden(adminComponent, packageName, true)
+                dpm.setApplicationHidden(adminComponent, packageName, false)
+                dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), false)
+                dpm.setUninstallBlocked(adminComponent, packageName, true)
             } catch (e: Exception) {
-                try {
-                    dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), true)
-                } catch (e2: Exception) {
-                    Log.e(TAG, "Failed to restrict new package $packageName", e2)
-                }
+                Log.w(TAG, "Error protecting new allowed package $packageName: ${e.message}")
             }
+            return
+        }
+
+        // 3. Unauthorized new application: Enforce immediate lockdown and remediation
+        Log.w(TAG, "UNAUTHORIZED APPLICATION DETECTED: $packageName! Immediate remediation initiated.")
+        try {
+            dpm.setApplicationHidden(adminComponent, packageName, true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to hide unauthorized package $packageName", e)
+        }
+
+        try {
+            dpm.setPackagesSuspended(adminComponent, arrayOf(packageName), true)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to suspend unauthorized package $packageName", e)
+        }
+
+        // Attempt silent uninstallation via PackageInstaller if permitted
+        try {
+            val packageInstaller = context.packageManager.packageInstaller
+            val callbackIntent = android.content.Intent("com.focusguard.ACTION_UNINSTALL_COMPLETE")
+            val pendingIntent = android.app.PendingIntent.getBroadcast(
+                context,
+                0,
+                callbackIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            packageInstaller.uninstall(packageName, pendingIntent.intentSender)
+            Log.i(TAG, "Triggered uninstallation session for unauthorized package: $packageName")
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not trigger silent uninstall for $packageName (app remains hidden/suspended): ${e.message}")
         }
     }
 }

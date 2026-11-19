@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (controller.checkAndRemediateSafeMode()) return
         refreshStatus()
         refreshInstalledApps(customAllowedSet)
     }
