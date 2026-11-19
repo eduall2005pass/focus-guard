@@ -72,6 +72,8 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY, note = "Authentic Hadith Collection"),
         AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY, note = "Islamic Discussions & Waz"),
         AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY, note = "Quran Study & Tafsir"),
+        AppItem("com.a3d4medical.completeanatomy", "Complete Anatomy", AppCategory.AI_STUDY, note = "3D Anatomy & Medical Learning"),
+        AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, note = "3D Anatomy by Elsevier"),
 
         // Google Productivity
         AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),

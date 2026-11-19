@@ -37,6 +37,8 @@ class PolicyVerificationTest {
         "com.ihadis.ihadis",
         "com.mahfil.app",
         "com.greentech.quran",
+        "com.a3d4medical.completeanatomy",
+        "com.elsevier.threeD4Medical.CompleteAnatomy",
 
         // Google Productivity
         "com.google.android.apps.docs",
@@ -101,6 +103,8 @@ class PolicyVerificationTest {
             AppItem("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY),
             AppItem("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY),
             AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY),
+            AppItem("com.a3d4medical.completeanatomy", "Complete Anatomy", AppCategory.AI_STUDY),
+            AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
@@ -228,6 +232,17 @@ class PolicyVerificationTest {
         )
         for (pkg in islamicPkgs) {
             assertTrue("Islamic app must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
+        }
+    }
+
+    @Test
+    fun verifyCompleteAnatomyInRegistryAndAllowlist() {
+        val anatomyPkgs = listOf(
+            "com.a3d4medical.completeanatomy",
+            "com.elsevier.threeD4Medical.CompleteAnatomy"
+        )
+        for (pkg in anatomyPkgs) {
+            assertTrue("Complete Anatomy package must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
         }
     }
 

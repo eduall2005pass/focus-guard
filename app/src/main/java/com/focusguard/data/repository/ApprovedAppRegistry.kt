@@ -72,6 +72,8 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.ihadis.ihadis", "iHadis", AppCategory.AI_STUDY, isPredefined = true, note = "Authentic Hadith Collection"),
             ApprovedAppEntry("com.mahfil.app", "Mahfil", AppCategory.AI_STUDY, isPredefined = true, note = "Islamic Discussions & Waz"),
             ApprovedAppEntry("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY, isPredefined = true, note = "Quran Study & Tafsir"),
+            ApprovedAppEntry("com.a3d4medical.completeanatomy", "Complete Anatomy", AppCategory.AI_STUDY, isPredefined = true, note = "3D Anatomy & Medical Learning"),
+            ApprovedAppEntry("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, isPredefined = true, note = "3D Anatomy by Elsevier"),
 
             // Google Productivity
             ApprovedAppEntry("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),

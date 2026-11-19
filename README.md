@@ -49,6 +49,7 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 | | iHadis | `com.ihadis.ihadis` | Authentic Hadith Collection |
 | | Mahfil | `com.mahfil.app` | Islamic Discussions & Lectures |
 | | Al Quran (Tafsir & by Word) | `com.greentech.quran` | Quran Study & Tafsir by Greentech |
+| | Complete Anatomy | `com.a3d4medical.completeanatomy`, `com.elsevier.threeD4Medical.CompleteAnatomy` | 3D Medical Anatomy Learning by Elsevier |
 | **Google Productivity** | Google Drive | `com.google.android.apps.docs` | Cloud Storage |
 | | Google Docs | `com.google.android.apps.docs.editors.docs` | Document Editor |
 | | Google Sheets | `com.google.android.apps.docs.editors.sheets` | Spreadsheet Editor |
