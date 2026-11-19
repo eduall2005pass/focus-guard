@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.runtime.*
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -37,6 +38,7 @@ fun StatusScreen(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    var showIrreversibleConfirmationDialog by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -55,7 +57,9 @@ fun StatusScreen(
             shape = RoundedCornerShape(16.dp),
             border = CardDefaults.outlinedCardBorder().copy(
                 brush = androidx.compose.ui.graphics.SolidColor(
-                    if (status.isDeviceOwner) GuardGreen.copy(alpha = 0.5f) else GuardRed.copy(alpha = 0.5f)
+                    if (status.isPolicyPermanentlyLocked) GuardGreen.copy(alpha = 0.8f)
+                    else if (status.isDeviceOwner) AccentBlue.copy(alpha = 0.5f)
+                    else GuardRed.copy(alpha = 0.5f)
                 )
             )
         ) {
@@ -70,22 +74,32 @@ fun StatusScreen(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
-                        imageVector = if (status.isDeviceOwner) Icons.Default.Shield else Icons.Default.Warning,
+                        imageVector = if (status.isPolicyPermanentlyLocked) Icons.Default.Lock
+                        else if (status.isDeviceOwner) Icons.Default.Shield
+                        else Icons.Default.Warning,
                         contentDescription = null,
-                        tint = if (status.isDeviceOwner) GuardGreen else GuardRed,
+                        tint = if (status.isPolicyPermanentlyLocked) GuardGreen
+                        else if (status.isDeviceOwner) AccentBlue
+                        else GuardRed,
                         modifier = Modifier.size(32.dp)
                     )
                     Column {
                         Text(
-                            text = if (status.isDeviceOwner) "Device Protection Active" else "Device Owner Required",
+                            text = if (status.isPolicyPermanentlyLocked) "Permanent Restriction Active"
+                            else if (status.isDeviceOwner) "Device Owner Provisioned"
+                            else "Device Owner Required",
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
                         )
                         Text(
-                            text = if (status.isDeviceOwner) "Hardware-level restriction enforcement active" else "Not provisioned as Device Owner",
-                            style = MaterialTheme.typography.bodyMedium.copy(color = TextSecondary)
+                            text = if (status.isPolicyPermanentlyLocked) "Irreversible • Reversal only via Factory Reset"
+                            else if (status.isDeviceOwner) "Ready to lock down device"
+                            else "Not provisioned as Device Owner",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (status.isPolicyPermanentlyLocked) GuardGreenText else TextSecondary
+                            )
                         )
                     }
                 }
@@ -99,15 +113,28 @@ fun StatusScreen(
                             .background(GuardAmberContainer.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                             .padding(10.dp)
                     )
+                } else if (status.isPolicyPermanentlyLocked) {
+                    Text(
+                        text = "Device restrictions are permanently locked. USB debugging (ADB) is disabled. Focus Guard cannot be turned off, modified, or uninstalled. Only a full device factory reset can restore unrestricted access.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = GuardGreenText),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(GuardGreenContainer.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                            .padding(10.dp)
+                    )
                 }
 
                 Button(
-                    onClick = onEnforceClicked,
+                    onClick = {
+                        if (status.isDeviceOwner) {
+                            showIrreversibleConfirmationDialog = true
+                        }
+                    },
                     enabled = !isEnforcing && status.isDeviceOwner,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GuardGreen,
-                        contentColor = DarkBackground,
+                        containerColor = if (status.isPolicyPermanentlyLocked) GuardGreenContainer else GuardGreen,
+                        contentColor = if (status.isPolicyPermanentlyLocked) GuardGreenText else DarkBackground,
                         disabledContainerColor = DarkSurfaceElevated,
                         disabledContentColor = TextMuted
                     ),
@@ -122,10 +149,16 @@ fun StatusScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Enforcing Restrictions...")
                     } else {
-                        Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(
+                            imageVector = if (status.isPolicyPermanentlyLocked) Icons.Default.Lock else Icons.Default.Shield,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (status.isDeviceOwner) "Enforce All Policies Now" else "Device Owner Required to Enforce",
+                            text = if (status.isPolicyPermanentlyLocked) "Re-Assert Permanent Policies"
+                            else if (status.isDeviceOwner) "Enforce Irreversible Lock Now"
+                            else "Device Owner Required",
                             fontWeight = FontWeight.SemiBold
                         )
                     }
@@ -206,6 +239,13 @@ fun StatusScreen(
         )
 
         SubsystemStatusItem(
+            icon = Icons.Default.Terminal,
+            title = "ADB & USB Debugging Access",
+            subtitle = if (status.isAdbDebuggingBlocked) "Permanently Disabled (DISALLOW_DEBUGGING_FEATURES)" else "Active (Will be blocked upon enforcement)",
+            isActive = status.isAdbDebuggingBlocked
+        )
+
+        SubsystemStatusItem(
             icon = Icons.Default.Dns,
             title = "Global Private DNS (DoT)",
             subtitle = if (status.privateDnsHost != null) "Locked to ${status.privateDnsHost}" else "high.kahfguard.com",
@@ -249,6 +289,63 @@ fun StatusScreen(
             onAction = {
                 context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
             }
+        )
+    }
+
+    if (showIrreversibleConfirmationDialog) {
+        AlertDialog(
+            onDismissRequest = { showIrreversibleConfirmationDialog = false },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = null, tint = GuardRed)
+                    Text("Permanent Restriction Lock", color = TextPrimary, fontWeight = FontWeight.Bold)
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "WARNING: THIS ACTION CANNOT BE REVERSED FROM THIS PHONE OR VIA A COMPUTER.",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = GuardRedText
+                        )
+                    )
+                    Text(
+                        "Once you confirm:\n" +
+                                "• USB Debugging (ADB) will be permanently shut off.\n" +
+                                "• Focus Guard cannot be uninstalled or turned off.\n" +
+                                "• Browsers, social media, and unapproved apps will be hidden.\n" +
+                                "• Private DNS will be enforced to high.kahfguard.com.\n" +
+                                "• Sideloading APKs will be blocked.\n\n" +
+                                "The ONLY escape route to remove these restrictions is a full device Factory Reset.",
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextSecondary, fontSize = 12.sp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showIrreversibleConfirmationDialog = false
+                        onEnforceClicked()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GuardRed,
+                        contentColor = TextPrimary
+                    )
+                ) {
+                    Text("Lock & Enforce Permanently")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showIrreversibleConfirmationDialog = false }) {
+                    Text("Cancel", color = TextSecondary)
+                }
+            },
+            containerColor = DarkSurface,
+            shape = RoundedCornerShape(16.dp)
         )
     }
 }

@@ -98,6 +98,9 @@ class DevicePolicyController(private val context: Context) {
             }
         }
 
+        val isAdbDebuggingBlocked = activeRestrictions.contains(UserManager.DISALLOW_DEBUGGING_FEATURES)
+        val isPolicyPermanentlyLocked = isDO && isAdbDebuggingBlocked && isUninstallBlocked
+
         return DeviceOwnerStatus(
             isDeviceOwner = isDO,
             isDeviceAdmin = isDA,
@@ -109,6 +112,8 @@ class DevicePolicyController(private val context: Context) {
             isUninstallBlocked = isUninstallBlocked,
             isSafeBootDisallowed = isSafeBootDisallowed,
             isUnknownSourcesBlocked = isUnknownSourcesBlocked,
+            isAdbDebuggingBlocked = isAdbDebuggingBlocked,
+            isPolicyPermanentlyLocked = isPolicyPermanentlyLocked,
             activeRestrictions = activeRestrictions
         )
     }
@@ -141,14 +146,16 @@ class DevicePolicyController(private val context: Context) {
             errors.add("Failed to lock uninstall for Focus Guard: ${e.message}")
         }
 
-        // 2. Enforce System User Restrictions
+        // 2. Enforce System User Restrictions (Including disabling ADB and uninstallation)
         val standardRestrictions = mutableListOf(
             UserManager.DISALLOW_CONFIG_VPN,
             UserManager.DISALLOW_NETWORK_RESET,
             UserManager.DISALLOW_SAFE_BOOT,
             UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES,
             UserManager.DISALLOW_ADD_USER,
-            UserManager.DISALLOW_CONFIG_DATE_TIME
+            UserManager.DISALLOW_CONFIG_DATE_TIME,
+            UserManager.DISALLOW_DEBUGGING_FEATURES, // Disables USB Debugging (ADB) completely
+            UserManager.DISALLOW_UNINSTALL_APPS     // Disallows uninstalling applications system-wide
         )
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

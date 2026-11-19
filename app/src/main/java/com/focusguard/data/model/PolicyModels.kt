@@ -22,5 +22,7 @@ data class DeviceOwnerStatus(
     val isUninstallBlocked: Boolean = false,
     val isSafeBootDisallowed: Boolean = false,
     val isUnknownSourcesBlocked: Boolean = false,
+    val isAdbDebuggingBlocked: Boolean = false,
+    val isPolicyPermanentlyLocked: Boolean = false,
     val activeRestrictions: List<String> = emptyList()
 )

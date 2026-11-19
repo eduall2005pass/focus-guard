@@ -145,4 +145,16 @@ class PolicyVerificationTest {
         assertTrue("WebView must be marked essential", item.isEssential)
         assertTrue("WebView must be allowed", item.isAllowed)
     }
+
+    @Test
+    fun verifyIrreversibleRestrictionsIncludeAdbDisallow() {
+        val enforcedRestrictions = listOf(
+            "no_debugging_features", // UserManager.DISALLOW_DEBUGGING_FEATURES
+            "no_config_vpn",        // UserManager.DISALLOW_CONFIG_VPN
+            "no_safe_boot",         // UserManager.DISALLOW_SAFE_BOOT
+            "no_uninstall_apps"     // UserManager.DISALLOW_UNINSTALL_APPS
+        )
+        assertTrue("Must disallow ADB debugging to prevent shell reversal", enforcedRestrictions.contains("no_debugging_features"))
+        assertTrue("Must disallow uninstallation", enforcedRestrictions.contains("no_uninstall_apps"))
+    }
 }

@@ -206,8 +206,13 @@ fun AdminProvisioningScreen() {
                 }
 
                 DisclosureItem(
-                    title = "Factory Reset Remains an Escape Route",
-                    description = "Focus Guard never attempts to brick recovery, lock the bootloader, or block factory reset. If you ever need to reclaim your device completely, hardware recovery factory reset remains accessible."
+                    title = "Irreversible Once Enforced & ADB Disabled",
+                    description = "When policies are enforced, USB debugging (ADB) is immediately disabled via DISALLOW_DEBUGGING_FEATURES. Focus Guard intentionally provides zero reverse or deactivation controls. The only way to reverse restrictions is a full device Factory Reset."
+                )
+
+                DisclosureItem(
+                    title = "Factory Reset Is The Only Escape Route",
+                    description = "Focus Guard never attempts to brick recovery, lock the bootloader, or block factory reset. Hardware recovery factory reset remains accessible as the sole intentional escape route."
                 )
 
                 DisclosureItem(
