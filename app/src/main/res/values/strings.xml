@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Focus Guard</string>
     <string name="device_admin_description">Focus Guard Device Policy Controller for persistent distraction restriction and allowlist enforcement.</string>
-    <string name="accessibility_service_label">Focus Guard — WhatsApp Communities Guard</string>
-    <string name="accessibility_service_description">Detects and prevents access to WhatsApp Communities while keeping regular WhatsApp chats and calls functional.</string>
+    <string name="accessibility_service_label">Focus Guard — Device Input &amp; Safety Guard</string>
+    <string name="accessibility_service_description">Provides system-wide real-time explicit input filtering, text protection, and WhatsApp community guarding.</string>
+    <string name="study_resources_widget_title">Study Resources</string>
+    <string name="study_resources_widget_subtitle">Focus Guard</string>
+    <string name="study_resources_widget_desc">Direct shortcut to Study Resources &amp; Approved Sites</string>
 </resources>

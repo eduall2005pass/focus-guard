@@ -3,7 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Permissions -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
@@ -12,7 +16,8 @@
     <application
         android:name=".FocusGuardApp"
         android:allowBackup="false"
-        android:icon="@android:drawable/ic_lock_lock"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.FocusGuard">
@@ -35,13 +40,15 @@
             </intent-filter>
         </receiver>
 
-        <!-- Boot Receiver for Re-Asserting Policies -->
+        <!-- Boot Receiver for Re-Asserting Policies & Maintenance Commands -->
         <receiver
             android:name=".receiver.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="com.focusguard.action.CLEAR_INSTALL_RESTRICTION" />
+                <action android:name="com.focusguard.action.ENFORCE_POLICY" />
             </intent-filter>
         </receiver>
 
@@ -49,7 +56,7 @@
         <receiver
             android:name=".receiver.PackageChangeReceiver"
             android:exported="true">
-            <intent-filter>
+            <intent-filter android:priority="999">
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
                 <action android:name="android.intent.action.PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.PACKAGE_REMOVED" />
@@ -73,6 +80,17 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- FileProvider for viewing downloaded educational PDFs and documents -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <!-- Main User Interface Activity -->
         <activity
             android:name=".ui.MainActivity"
@@ -82,6 +100,35 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Study Resources Home Screen Widget Receiver -->
+        <receiver
+            android:name=".study.widget.StudyResourcesWidgetProvider"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/study_resources_widget_info" />
+        </receiver>
+
+        <!-- Restricted In-App WebView Handler for Web Logins & OAuth -->
+        <activity
+            android:name=".study.ui.RestrictedAuthWebViewActivity"
+            android:exported="true"
+            android:label="Focus Guard Web Login"
+            android:theme="@style/Theme.FocusGuard"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
+            <intent-filter android:priority="999">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
             </intent-filter>
         </activity>
 
