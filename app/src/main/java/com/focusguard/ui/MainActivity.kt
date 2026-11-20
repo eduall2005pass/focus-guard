@@ -220,10 +220,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: android.content.Intent) {
         super.onNewIntent(intent)
+        setIntent(intent)
         handleScreenModeIntent(intent)
     }
 
     private fun handleScreenModeIntent(intent: android.content.Intent?) {
+        activeFullscreenWebsite = null
         when (intent?.getStringExtra("screen_mode")) {
             "security" -> {
                 initialSecurityTabIndex = intent.getIntExtra("tab_index", 0)
