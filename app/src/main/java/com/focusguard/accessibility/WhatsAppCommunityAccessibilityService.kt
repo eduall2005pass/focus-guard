@@ -712,8 +712,9 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
         }
 
         // 1.5. Intercept attempts to access Parental Controls when blocked by policy
+        val controller = devicePolicyController ?: DevicePolicyController(applicationContext).also { devicePolicyController = it }
         val isParentalControlBlocked = try {
-            DevicePolicyController(applicationContext).isParentalControlAccessBlocked()
+            controller.isParentalControlAccessBlocked()
         } catch (_: Exception) { false }
 
         if (isParentalControlBlocked) {
@@ -723,8 +724,16 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
                     (event.className?.toString()?.contains("SupervisionDashboardActivity", ignoreCase = true) == true)
 
             // Do not block when we are only in main settings homepage list
+            val isSettingsHomepage = combinedText.contains("device care") ||
+                    combinedText.contains("general management") ||
+                    combinedText.contains("ডিভাইস কেয়ার") ||
+                    combinedText.contains("ডিভাইস যত্ন") ||
+                    combinedText.contains("সাধারণ ব্যবস্থাপনা") ||
+                    combinedText.contains("digital wellbeing") ||
+                    combinedText.contains("ডিজিটাল ওয়েলবিয়িং")
+
             val isDashboardScreen = event.className?.toString()?.contains("SupervisionDashboardActivity", ignoreCase = true) == true ||
-                    (isParentalControlScreen && !combinedText.contains("device care") && !combinedText.contains("general management"))
+                    (isParentalControlScreen && !isSettingsHomepage)
 
             if (isDashboardScreen) {
                 val now = System.currentTimeMillis()
