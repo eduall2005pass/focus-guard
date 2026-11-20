@@ -280,18 +280,21 @@ class DevicePolicyController(private val context: Context) {
     }
 
     fun setParentalControlAccessBlocked(blocked: Boolean): Boolean {
-        parentalControlPrefs.edit().putBoolean(KEY_PARENTAL_CONTROL_BLOCKED, blocked).apply()
         if (!isDeviceOwner()) return false
         return try {
-            if (blocked) {
+            val success = if (blocked) {
                 dpm.setApplicationHidden(adminComponent, PARENTAL_CARE_PACKAGE, false)
                 val failed = dpm.setPackagesSuspended(adminComponent, arrayOf(PARENTAL_CARE_PACKAGE), true)
                 failed.isEmpty()
             } else {
-                dpm.setPackagesSuspended(adminComponent, arrayOf(PARENTAL_CARE_PACKAGE), false)
+                val failed = dpm.setPackagesSuspended(adminComponent, arrayOf(PARENTAL_CARE_PACKAGE), false)
                 dpm.setApplicationHidden(adminComponent, PARENTAL_CARE_PACKAGE, false)
-                true
+                failed.isEmpty()
             }
+            if (success) {
+                parentalControlPrefs.edit().putBoolean(KEY_PARENTAL_CONTROL_BLOCKED, blocked).apply()
+            }
+            success
         } catch (e: Exception) {
             Log.e(TAG, "Error updating parental control restriction", e)
             false

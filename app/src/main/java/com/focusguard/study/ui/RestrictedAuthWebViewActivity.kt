@@ -269,12 +269,16 @@ private fun RestrictedAuthScreen(
                                 // 1. Custom app schemes (e.g. livemcq://, oauth://, intent://) -> fire back to app
                                 if (!url.startsWith("http://") && !url.startsWith("https://")) {
                                     try {
-                                        val intent = if (url.startsWith("intent://")) {
+                                        val intent = (if (url.startsWith("intent://")) {
                                             Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
                                         } else {
                                             Intent(Intent.ACTION_VIEW, uri)
+                                        }).apply {
+                                            addCategory(Intent.CATEGORY_BROWSABLE)
+                                            component = null
+                                            selector = null
+                                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         }
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                                         ctx.startActivity(intent)
                                         (ctx as? ComponentActivity)?.finish()
                                     } catch (e: Exception) {
@@ -395,6 +399,8 @@ private fun RestrictedAuthScreen(
                                                 return true
                                             }
                                             view?.loadUrl(popupUrl)
+                                            v?.stopLoading()
+                                            v?.loadUrl("about:blank")
                                             return true
                                         }
 
@@ -408,6 +414,8 @@ private fun RestrictedAuthScreen(
                                                     return
                                                 }
                                                 view?.loadUrl(url)
+                                                v?.stopLoading()
+                                                v?.loadUrl("about:blank")
                                             }
                                         }
                                     }

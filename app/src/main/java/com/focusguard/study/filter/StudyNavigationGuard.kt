@@ -287,46 +287,6 @@ object StudyNavigationGuard {
         }
     }
 
-    fun extractYoutubeVideoId(uriString: String?): String? {
-        if (uriString.isNullOrBlank()) return null
-        return try {
-            val raw = if (uriString.contains("://")) uriString else "https://$uriString"
-            val (host, path) = parseUriHostAndPath(raw)
-            if (host == null) return null
-
-            var vid: String? = null
-            if (host == "youtu.be" || host == "www.youtu.be") {
-                val cleanPath = (path ?: "").trim('/')
-                vid = cleanPath.split('/')[0]
-            } else if (isYoutubeHost(host)) {
-                val cleanPath = (path ?: "").trim('/')
-                if (cleanPath == "watch") {
-                    val query = try { URI(raw).query } catch (_: Exception) { null }
-                    if (query != null) {
-                        for (param in query.split("&")) {
-                            val kv = param.split("=")
-                            if (kv.size == 2 && kv[0] == "v") {
-                                vid = kv[1]
-                                break
-                            }
-                        }
-                    }
-                } else if (cleanPath.startsWith("watch/")) {
-                    vid = cleanPath.substringAfter("watch/").split('/')[0]
-                } else {
-                    for (prefix in listOf("embed/", "shorts/", "live/", "v/")) {
-                        if (cleanPath.startsWith(prefix)) {
-                            vid = cleanPath.substring(prefix.length).split('/')[0]
-                            break
-                        }
-                    }
-                }
-            }
-            if (vid != null && vid.matches(Regex("[A-Za-z0-9_-]{6,}"))) vid else null
-        } catch (_: Exception) {
-            null
-        }
-    }
 
     fun matchesHostPattern(host: String, pattern: String): Boolean {
         val p = pattern.trim().lowercase()

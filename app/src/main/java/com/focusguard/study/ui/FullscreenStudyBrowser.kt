@@ -359,6 +359,8 @@ fun FullscreenStudyBrowser(
                                                     return true
                                                 }
                                                 view?.loadUrl(popupUrl)
+                                                v?.stopLoading()
+                                                v?.loadUrl("about:blank")
                                                 return true
                                             }
 
@@ -371,6 +373,8 @@ fun FullscreenStudyBrowser(
                                                         return
                                                     }
                                                     view?.loadUrl(url)
+                                                    v?.stopLoading()
+                                                    v?.loadUrl("about:blank")
                                                 }
                                             }
                                         }

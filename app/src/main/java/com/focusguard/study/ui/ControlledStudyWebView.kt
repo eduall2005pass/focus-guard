@@ -363,6 +363,8 @@ fun ControlledStudyWebView(
                                                     return true
                                                 }
                                                 view?.loadUrl(popupUrl)
+                                                v?.stopLoading()
+                                                v?.loadUrl("about:blank")
                                                 return true
                                             }
 
@@ -375,6 +377,8 @@ fun ControlledStudyWebView(
                                                         return
                                                     }
                                                     view?.loadUrl(url)
+                                                    v?.stopLoading()
+                                                    v?.loadUrl("about:blank")
                                                 }
                                             }
                                         }
