@@ -35,6 +35,7 @@ import com.focusguard.study.filter.FocusInputFilter
 import com.focusguard.study.filter.StudyNavigationGuard
 import com.focusguard.study.repository.StudyWebsiteRegistry
 import com.focusguard.ui.theme.DarkBackground
+import java.io.ByteArrayInputStream
 import com.focusguard.ui.theme.DarkSurface
 import com.focusguard.ui.theme.FocusGuardTheme
 import com.focusguard.ui.theme.GuardGreenText
@@ -57,27 +58,31 @@ class RestrictedAuthWebViewActivity : ComponentActivity() {
 
     private var targetUrl: String = ""
     private var webView: WebView? = null
+    private var cachedApprovedHosts: Set<String> = emptySet()
+
+    private fun extractUrlFromIntent(intent: Intent?): String {
+        val dataString = intent?.dataString
+        val extraText = intent?.getStringExtra(Intent.EXTRA_TEXT)
+        return when {
+            !dataString.isNullOrBlank() -> dataString
+            !extraText.isNullOrBlank() && (extraText.startsWith("http://") || extraText.startsWith("https://")) -> extraText
+            else -> ""
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val dataString = intent.dataString
-        val extraText = intent.getStringExtra(Intent.EXTRA_TEXT)
-        targetUrl = when {
-            !dataString.isNullOrBlank() -> dataString
-            !extraText.isNullOrBlank() && (extraText.startsWith("http://") || extraText.startsWith("https://")) -> extraText
-            else -> ""
-        }
-
+        targetUrl = extractUrlFromIntent(intent)
         if (targetUrl.isBlank()) {
             Toast.makeText(this, "No valid login URL provided", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        val approvedHosts = StudyWebsiteRegistry(this).getAllowedHosts()
-        val isAllowed = StudyNavigationGuard.isNavPermitted(targetUrl, approvedHosts, telegramMode = false)
+        cachedApprovedHosts = StudyWebsiteRegistry(this).getAllowedHosts()
+        val isAllowed = StudyNavigationGuard.isNavPermitted(targetUrl, cachedApprovedHosts, telegramMode = false)
         if (!isAllowed) {
             Toast.makeText(this, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($targetUrl)", Toast.LENGTH_SHORT).show()
             finish()
@@ -88,9 +93,25 @@ class RestrictedAuthWebViewActivity : ComponentActivity() {
             FocusGuardTheme {
                 RestrictedAuthScreen(
                     initialUrl = targetUrl,
+                    approvedHosts = cachedApprovedHosts,
                     onClose = { finish() },
                     onRegisterWebView = { wv -> webView = wv }
                 )
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val newUrl = extractUrlFromIntent(intent)
+        if (newUrl.isNotBlank()) {
+            val hosts = cachedApprovedHosts.ifEmpty { StudyWebsiteRegistry(this).getAllowedHosts() }
+            if (StudyNavigationGuard.isNavPermitted(newUrl, hosts, telegramMode = false)) {
+                targetUrl = newUrl
+                webView?.loadUrl(newUrl)
+            } else {
+                Toast.makeText(this, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($newUrl)", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -127,6 +148,7 @@ class RestrictedAuthWebViewActivity : ComponentActivity() {
 @Composable
 private fun RestrictedAuthScreen(
     initialUrl: String,
+    approvedHosts: Set<String>,
     onClose: () -> Unit,
     onRegisterWebView: (WebView) -> Unit
 ) {
@@ -269,7 +291,6 @@ private fun RestrictedAuthScreen(
                                 }
 
                                 // 3. Domain permit check:
-                                val approvedHosts = StudyWebsiteRegistry(ctx).getAllowedHosts()
                                 val isAllowed = StudyNavigationGuard.isNavPermitted(url, approvedHosts, telegramMode = false)
                                 if (!isAllowed) {
                                     Toast.makeText(ctx, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($url)", Toast.LENGTH_SHORT).show()
@@ -278,6 +299,50 @@ private fun RestrictedAuthScreen(
 
                                 currentHost = uri.host ?: ""
                                 return false
+                            }
+
+                            override fun shouldInterceptRequest(
+                                view: WebView?,
+                                request: WebResourceRequest?
+                            ): WebResourceResponse? {
+                                val uri = request?.url ?: return null
+                                val urlStr = uri.toString()
+                                val isMain = request.isForMainFrame
+
+                                if (isMain) {
+                                    val permitted = StudyNavigationGuard.isNavPermitted(
+                                        urlStr,
+                                        approvedHosts,
+                                        telegramMode = false,
+                                        mainFrame = true
+                                    )
+                                    if (!permitted) {
+                                        return WebResourceResponse(
+                                            "text/plain",
+                                            "UTF-8",
+                                            403,
+                                            "Forbidden",
+                                            emptyMap(),
+                                            ByteArrayInputStream(ByteArray(0))
+                                        )
+                                    }
+                                } else {
+                                    val host = uri.host?.lowercase() ?: ""
+                                    if (StudyNavigationGuard.isCategoricallyForbidden(host) ||
+                                        StudyNavigationGuard.isHostBlocked(host) ||
+                                        StudyNavigationGuard.isYoutubeHost(host)) {
+                                        return WebResourceResponse(
+                                            "text/plain",
+                                            "UTF-8",
+                                            403,
+                                            "Forbidden",
+                                            emptyMap(),
+                                            ByteArrayInputStream(ByteArray(0))
+                                        )
+                                    }
+                                }
+
+                                return super.shouldInterceptRequest(view, request)
                             }
 
                             override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -322,10 +387,11 @@ private fun RestrictedAuthScreen(
                                     webViewClient = object : WebViewClient() {
                                         override fun shouldOverrideUrlLoading(v: WebView?, req: WebResourceRequest?): Boolean {
                                             val popupUrl = req?.url?.toString() ?: return false
-                                            val approvedHosts = StudyWebsiteRegistry(ctx).getAllowedHosts()
                                             val isAllowed = StudyNavigationGuard.isNavPermitted(popupUrl, approvedHosts, telegramMode = false)
                                             if (!isAllowed) {
                                                 Toast.makeText(ctx, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($popupUrl)", Toast.LENGTH_SHORT).show()
+                                                v?.stopLoading()
+                                                v?.loadUrl("about:blank")
                                                 return true
                                             }
                                             view?.loadUrl(popupUrl)
@@ -334,10 +400,11 @@ private fun RestrictedAuthScreen(
 
                                         override fun onPageStarted(v: WebView?, url: String?, favicon: Bitmap?) {
                                             if (!url.isNullOrBlank() && url != "about:blank") {
-                                                val approvedHosts = StudyWebsiteRegistry(ctx).getAllowedHosts()
                                                 val isAllowed = StudyNavigationGuard.isNavPermitted(url, approvedHosts, telegramMode = false)
                                                 if (!isAllowed) {
                                                     Toast.makeText(ctx, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($url)", Toast.LENGTH_SHORT).show()
+                                                    v?.stopLoading()
+                                                    v?.loadUrl("about:blank")
                                                     return
                                                 }
                                                 view?.loadUrl(url)

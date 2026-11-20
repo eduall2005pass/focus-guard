@@ -354,6 +354,8 @@ fun FullscreenStudyBrowser(
                                                 val popupUrl = req?.url?.toString() ?: return false
                                                 if (!StudyNavigationGuard.isNavPermitted(popupUrl, approvedHosts)) {
                                                     Toast.makeText(ctx, "Navigation blocked: Unapproved domain", Toast.LENGTH_SHORT).show()
+                                                    v?.stopLoading()
+                                                    v?.loadUrl("about:blank")
                                                     return true
                                                 }
                                                 view?.loadUrl(popupUrl)
@@ -364,6 +366,8 @@ fun FullscreenStudyBrowser(
                                                 if (!url.isNullOrBlank() && url != "about:blank") {
                                                     if (!StudyNavigationGuard.isNavPermitted(url, approvedHosts)) {
                                                         Toast.makeText(ctx, "Navigation blocked: Unapproved domain", Toast.LENGTH_SHORT).show()
+                                                        v?.stopLoading()
+                                                        v?.loadUrl("about:blank")
                                                         return
                                                     }
                                                     view?.loadUrl(url)

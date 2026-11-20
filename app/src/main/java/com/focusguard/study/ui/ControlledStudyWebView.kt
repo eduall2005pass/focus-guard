@@ -358,6 +358,8 @@ fun ControlledStudyWebView(
                                                 val popupUrl = req?.url?.toString() ?: return false
                                                 if (!StudyNavigationGuard.isNavPermitted(popupUrl, approvedHosts, isTelegramMode)) {
                                                     Toast.makeText(ctx, "Navigation blocked: Unapproved domain", Toast.LENGTH_SHORT).show()
+                                                    v?.stopLoading()
+                                                    v?.loadUrl("about:blank")
                                                     return true
                                                 }
                                                 view?.loadUrl(popupUrl)
@@ -368,6 +370,8 @@ fun ControlledStudyWebView(
                                                 if (!url.isNullOrBlank() && url != "about:blank") {
                                                     if (!StudyNavigationGuard.isNavPermitted(url, approvedHosts, isTelegramMode)) {
                                                         Toast.makeText(ctx, "Navigation blocked: Unapproved domain", Toast.LENGTH_SHORT).show()
+                                                        v?.stopLoading()
+                                                        v?.loadUrl("about:blank")
                                                         return
                                                     }
                                                     view?.loadUrl(url)
