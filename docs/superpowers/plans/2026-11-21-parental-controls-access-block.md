@@ -418,7 +418,151 @@ git commit -m "feat(widget): add compact study resources home screen shortcut wi
 
 ---
 
-### Task 5: Deployment & Verification on Device
+### Task 5: Strict In-App Browser Domain Lockdown (Zero YouTube & Unapproved Browsing)
+
+**Files:**
+- Create: `app/src/test/java/com/focusguard/study/StudyNavigationGuardTest.kt`
+- Modify: `app/src/main/java/com/focusguard/study/filter/StudyNavigationGuard.kt`
+- Modify: `app/src/main/java/com/focusguard/study/ui/RestrictedAuthWebViewActivity.kt`
+- Modify: `app/src/main/java/com/focusguard/study/ui/FullscreenStudyBrowser.kt`
+- Modify: `app/src/main/java/com/focusguard/study/ui/ControlledStudyWebView.kt`
+
+**Interfaces:**
+- Produces:
+  - `StudyNavigationGuard.isNavPermitted(url, approvedHosts, telegramMode, mainFrame): Boolean` with zero YouTube exceptions and strict domain checking.
+  - `RestrictedAuthWebViewActivity` domain allowlist validator enforcing Auth SSO domains + `StudyWebsiteRegistry` approved hosts.
+  - `onCreateWindow` popup navigation interception in `FullscreenStudyBrowser` and `ControlledStudyWebView`.
+
+- [ ] **Step 1: Write TDD unit test verifying strict domain lockdown and YouTube blocking**
+
+In `app/src/test/java/com/focusguard/study/StudyNavigationGuardTest.kt`:
+```kotlin
+package com.focusguard.study
+
+import com.focusguard.study.filter.StudyNavigationGuard
+import org.junit.Assert.*
+import org.junit.Test
+
+class StudyNavigationGuardTest {
+
+    private val sampleApprovedHosts = setOf("boimate.com", "du.ac.bd", "gtc.edu.bd")
+
+    @Test
+    fun testYouTubeUrlsAreStrictlyBlocked() {
+        val youtubeUrls = listOf(
+            "https://www.youtube.com",
+            "https://m.youtube.com",
+            "https://youtube.com/watch?v=dQw4w9WgXcQ",
+            "https://youtu.be/dQw4w9WgXcQ",
+            "https://www.youtube.com/embed/dQw4w9WgXcQ",
+            "https://music.youtube.com",
+            "https://www.youtube.com/shorts/abcdef12345"
+        )
+        for (url in youtubeUrls) {
+            assertFalse("YouTube URL must be blocked: $url", StudyNavigationGuard.isNavPermitted(url, sampleApprovedHosts))
+        }
+    }
+
+    @Test
+    fun testApprovedHostsArePermitted() {
+        val allowedUrls = listOf(
+            "https://boimate.com",
+            "https://du.ac.bd/study",
+            "https://gtc.edu.bd/portal"
+        )
+        for (url in allowedUrls) {
+            assertTrue("Approved study host must be allowed: $url", StudyNavigationGuard.isNavPermitted(url, sampleApprovedHosts))
+        }
+    }
+
+    @Test
+    fun testEssentialAuthHostsArePermitted() {
+        val authUrls = listOf(
+            "https://accounts.google.com/o/oauth2/auth",
+            "https://appleid.apple.com/auth/authorize",
+            "https://challenges.cloudflare.com/turnstile/v0/api.js"
+        )
+        for (url in authUrls) {
+            assertTrue("Essential auth/supporting host must be allowed: $url", StudyNavigationGuard.isNavPermitted(url, sampleApprovedHosts))
+        }
+    }
+
+    @Test
+    fun testUnapprovedDomainsAreStrictlyBlocked() {
+        val blockedUrls = listOf(
+            "https://facebook.com",
+            "https://instagram.com",
+            "https://reddit.com",
+            "https://google.com/search?q=test",
+            "https://bing.com",
+            "https://random-unapproved-site.org"
+        )
+        for (url in blockedUrls) {
+            assertFalse("Unapproved URL must be blocked: $url", StudyNavigationGuard.isNavPermitted(url, sampleApprovedHosts))
+        }
+    }
+}
+```
+
+- [ ] **Step 2: Run test to verify it fails on YouTube URLs**
+
+Run:
+```bash
+export JAVA_HOME="/home/prof21/.android-toolchain/jdk-17" && export PATH="$JAVA_HOME/bin:$PATH" && ./gradlew testDebugUnitTest --tests com.focusguard.study.StudyNavigationGuardTest
+```
+Expected: FAIL because `youtube.com/watch?v=...` is currently permitted by `specificYoutubeVideo`.
+
+- [ ] **Step 3: Remove YouTube exception from `StudyNavigationGuard.kt` and lock down `RestrictedAuthWebViewActivity.kt`**
+
+In `StudyNavigationGuard.kt`:
+1. Remove `specificYoutubeVideo` checks. YouTube is always blocked:
+   ```kotlin
+   if (isHostBlocked(host) && !directDriveDownload) {
+       return false
+   }
+   if (isYoutubeHost(host)) return false
+   ```
+2. In `BUILTIN_SUPPORTING_DOMAINS`, add standard auth SSO domains: `appleid.apple.com`, `login.microsoftonline.com`, `login.live.com`, `github.com`.
+3. In `RestrictedAuthWebViewActivity.kt`:
+   In `shouldOverrideUrlLoading` AND in `onCreate` targetUrl validation:
+   Check if the URL is permitted:
+   ```kotlin
+   val approvedHosts = StudyWebsiteRegistry(this).getAllowedHosts()
+   val isAllowed = StudyNavigationGuard.isNavPermitted(url, approvedHosts, telegramMode = false)
+   if (!isAllowed) {
+       Toast.makeText(this, "Focus Guard: এই ডোমেইনটি অনুমোদিত নয় ($url)", Toast.LENGTH_SHORT).show()
+       return true // Cancel navigation
+   }
+   ```
+4. In `FullscreenStudyBrowser.kt` and `ControlledStudyWebView.kt`:
+   In `onCreateWindow` popup WebView:
+   Check `shouldOverrideUrlLoading` in popup WebView:
+   ```kotlin
+   if (!StudyNavigationGuard.isNavPermitted(popupUrl, approvedHosts, isTelegramMode)) {
+       Toast.makeText(ctx, "Navigation blocked: Unapproved domain", Toast.LENGTH_SHORT).show()
+       return true
+   }
+   view?.loadUrl(popupUrl)
+   ```
+
+- [ ] **Step 4: Run tests to verify all pass**
+
+Run:
+```bash
+export JAVA_HOME="/home/prof21/.android-toolchain/jdk-17" && export PATH="$JAVA_HOME/bin:$PATH" && ./gradlew testDebugUnitTest --tests com.focusguard.study.StudyNavigationGuardTest
+```
+Expected: PASS.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add app/src/main/java/com/focusguard/study/filter/StudyNavigationGuard.kt app/src/main/java/com/focusguard/study/ui/RestrictedAuthWebViewActivity.kt app/src/main/java/com/focusguard/study/ui/FullscreenStudyBrowser.kt app/src/main/java/com/focusguard/study/ui/ControlledStudyWebView.kt app/src/test/java/com/focusguard/study/StudyNavigationGuardTest.kt
+git commit -m "fix(security): lock down in-app browser with zero youtube exceptions and strict domain allowlist"
+```
+
+---
+
+### Task 6: Deployment & Verification on Device
 
 **Files:**
 - Build output: `app/build/outputs/apk/debug/app-debug.apk`
@@ -454,4 +598,5 @@ Run:
 adb shell dumpsys appwidget | grep "StudyResourcesWidgetProvider"
 ```
 Expected: Provider registered and available in widget picker.
+
 
