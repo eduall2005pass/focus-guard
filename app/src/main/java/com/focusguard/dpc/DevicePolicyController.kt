@@ -337,12 +337,11 @@ class DevicePolicyController(private val context: Context) {
      * Checks if ADB USB debugging is blocked via DPC restriction.
      */
     fun isAdbDebuggingBlocked(): Boolean {
-        return parentalControlPrefs.getBoolean(KEY_ADB_DEBUGGING_BLOCKED, false)
+        return parentalControlPrefs.getBoolean(KEY_ADB_DEBUGGING_BLOCKED, true)
     }
 
     /**
      * Toggles ADB USB debugging restriction directly via DevicePolicyManager.
-     * By default false so debugging/testing on device is not interrupted.
      */
     fun setAdbDebuggingBlocked(blocked: Boolean): Boolean {
         parentalControlPrefs.edit().putBoolean(KEY_ADB_DEBUGGING_BLOCKED, blocked).apply()
@@ -350,9 +349,13 @@ class DevicePolicyController(private val context: Context) {
         return try {
             if (blocked) {
                 dpm.addUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
+                try {
+                    android.provider.Settings.Global.putInt(context.contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0)
+                } catch (_: Exception) {}
             } else {
                 dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
             }
+            Log.i(TAG, "ADB debugging restriction set: blocked=$blocked")
             true
         } catch (e: Exception) {
             Log.e(TAG, "Error updating ADB debugging restriction", e)

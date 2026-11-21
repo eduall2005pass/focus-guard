@@ -369,6 +369,7 @@ fun SecurityThreeDotMenu(
     if (showSecurityOptionsDialog) {
         var isParentalBlocked by remember { mutableStateOf(actualDpcController.isParentalControlAccessBlocked()) }
         var isResetBlocked by remember { mutableStateOf(actualDpcController.isFactoryResetBlocked()) }
+        var isAdbBlocked by remember { mutableStateOf(actualDpcController.isAdbDebuggingBlocked()) }
 
         AlertDialog(
             onDismissRequest = { showSecurityOptionsDialog = false },
@@ -485,7 +486,49 @@ fun SecurityThreeDotMenu(
                         }
                     }
 
-                    // 3. Focus Guard Security PIN Change (Not Parental Control PIN)
+                    // 3. Settings ADB USB Debugging Access Toggle (Direct DPC Policy)
+                    OutlinedButton(
+                        onClick = {
+                            val newTarget = !isAdbBlocked
+                            val success = actualDpcController.setAdbDebuggingBlocked(newTarget)
+                            if (success) {
+                                isAdbBlocked = newTarget
+                                val msg = if (newTarget) {
+                                    "USB ডিবাগিং (ADB) ব্লক করা হয়েছে (DISALLOW_DEBUGGING_FEATURES)।"
+                                } else {
+                                    "USB ডিবাগিং (ADB) সচল করা হয়েছে (Allowed)।"
+                                }
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "ডিভাইস ওনার অনুমতি প্রয়োজন।", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (isAdbBlocked) Color(0xFFFFB74D) else GuardGreenText
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(
+                            if (isAdbBlocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text(
+                                if (isAdbBlocked) "USB ডিবাগিং আনব্লক করুন (Allow ADB)" else "USB ডিবাগিং ব্লক করুন (Block ADB)",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (isAdbBlocked) "স্ট্যাটাস: ব্লকড (DISALLOW_DEBUGGING_FEATURES) 🔒" else "স্ট্যাটাস: সচল (Allowed) 🔓",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isAdbBlocked) Color(0xFFFFB74D) else GuardGreenText
+                            )
+                        }
+                    }
+
+                    // 4. Focus Guard Security PIN Change (Not Parental Control PIN)
                     OutlinedButton(
                         onClick = {
                             showSecurityOptionsDialog = false

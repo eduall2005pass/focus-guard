@@ -15,6 +15,8 @@ import android.view.accessibility.AccessibilityNodeInfo
 import android.widget.Toast
 import com.focusguard.data.repository.ApprovedAppRegistry
 import com.focusguard.dpc.DevicePolicyController
+import com.focusguard.policy.AppUsageLimitManager
+import com.focusguard.policy.DowntimeManager
 import com.focusguard.installer.FastInstallSuspender
 import com.focusguard.study.filter.CoolingOffEvent
 import com.focusguard.study.filter.FocusInputFilter
@@ -37,6 +39,41 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
     private var accessibilityWatcher: AccessibilityServiceWatcher? = null
     private var devicePolicyController: DevicePolicyController? = null
     private var lastActionNotAllowedToastTime = 0L
+    private var appUsageLimitManager: AppUsageLimitManager? = null
+    private var lastDowntimeToastTime = 0L
+    private var lastLimitToastTime = 0L
+
+    private val limitCheckRunnable = object : Runnable {
+        override fun run() {
+            try {
+                val manager = appUsageLimitManager
+                if (manager != null) {
+                    manager.flushOngoingUsage()
+                    val activeWindowPkg = try { rootInActiveWindow?.packageName?.toString() } catch (_: Exception) { null }
+                    if (activeWindowPkg != null) {
+                        if (DowntimeManager.isDowntimeActive() && !DowntimeManager.isPackageAllowedDuringDowntime(activeWindowPkg)) {
+                            Log.w(TAG, "Downtime active. Closing active window: $activeWindowPkg")
+                            performGlobalAction(GLOBAL_ACTION_HOME)
+                        } else if (manager.isPackageLimitExceeded(activeWindowPkg)) {
+                            val appName = AppUsageLimitManager.getDisplayName(activeWindowPkg)
+                            Log.w(TAG, "Limit reached during active session for $activeWindowPkg ($appName). Closing.")
+                            performGlobalAction(GLOBAL_ACTION_HOME)
+                            mainHandler.post {
+                                Toast.makeText(
+                                    applicationContext,
+                                    "⚠️ Focus Guard: '$appName'-এর আজকের সময়সীমা শেষ হয়েছে।",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.d(TAG, "Limit check ticker notice: ${e.message}")
+            }
+            mainHandler.postDelayed(this, 10000L)
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -46,6 +83,11 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
                 startWatching()
             }
         }
+        if (appUsageLimitManager == null) {
+            appUsageLimitManager = AppUsageLimitManager(applicationContext)
+        }
+        mainHandler.removeCallbacks(limitCheckRunnable)
+        mainHandler.postDelayed(limitCheckRunnable, 5000L)
         FastInstallSuspender.getInstance(applicationContext).startWatching()
     }
 
@@ -132,6 +174,54 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
         }
 
         val pkg = event.packageName?.toString() ?: return
+
+        // 0.2. Nightly Downtime Enforcement (11:00 PM - 6:00 AM)
+        if (DowntimeManager.isDowntimeActive()) {
+            if (!DowntimeManager.isPackageAllowedDuringDowntime(pkg)) {
+                val now = System.currentTimeMillis()
+                if (now - lastDowntimeToastTime > DEBOUNCE_MILLIS * 2) {
+                    lastDowntimeToastTime = now
+                    Log.w(TAG, "Blocked $pkg during downtime (11 PM - 6 AM). Returning to Home.")
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    mainHandler.post {
+                        Toast.makeText(
+                            applicationContext,
+                            "⚠️ Focus Guard: রাত ১১টা থেকে সকাল ৬টা পর্যন্ত ডাউনটাইম চলছে। শুধুমাত্র ফোন, ম্যাপস, কুরআন, উবার ও ব্রিলিয়ান্ট চালু থাকবে।",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
+                return
+            }
+        }
+
+        // 0.3. Daily App Screen Time Limits Enforcement
+        val usageManager = appUsageLimitManager ?: AppUsageLimitManager(applicationContext).also { appUsageLimitManager = it }
+        if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+            usageManager.onAppForegrounded(pkg)
+
+            if (usageManager.isPackageLimitExceeded(pkg)) {
+                val now = System.currentTimeMillis()
+                if (now - lastLimitToastTime > DEBOUNCE_MILLIS * 2) {
+                    lastLimitToastTime = now
+                    val appName = AppUsageLimitManager.getDisplayName(pkg)
+                    Log.w(TAG, "Screen time limit reached for $pkg ($appName). Booting to Home.")
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    mainHandler.post {
+                        Toast.makeText(
+                            applicationContext,
+                            "⚠️ Focus Guard: '$appName'-এর আজকের সময়সীমা শেষ হয়েছে। আজকের জন্য অ্যাপটি বন্ধ রাখা হয়েছে।",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                } else {
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                }
+                return
+            }
+        }
 
         // 0.4. Intercept clicks on Google Lens / Visual Search entry points anywhere on device
         if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
@@ -821,9 +911,11 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        mainHandler.removeCallbacks(limitCheckRunnable)
+        appUsageLimitManager?.onAppBackgrounded()
         accessibilityWatcher?.stopWatching()
         accessibilityWatcher = null
+        super.onDestroy()
         Log.i(TAG, "WhatsApp Community Accessibility Service destroyed.")
     }
 }
