@@ -33,7 +33,7 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
     private var lastBlockTimestamp = 0L
     private var lastExplicitDetectionTime = 0L
     private var lastExplicitHitWord: String? = null
-    private var isCircleToSearchActive = false
+    private var isGeminiActive = false
     private var accessibilityWatcher: AccessibilityServiceWatcher? = null
     private var devicePolicyController: DevicePolicyController? = null
     private var lastActionNotAllowedToastTime = 0L
@@ -69,6 +69,44 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
             "community home",
             "stay connected with a community"
         )
+
+        fun isLensOrVisualSearch(className: String): Boolean {
+            return className.contains("Lens", ignoreCase = true) ||
+                    className.contains("Omnient", ignoreCase = true) ||
+                    className.contains("CircleToSearch", ignoreCase = true) ||
+                    className.contains("ContextualSearch", ignoreCase = true) ||
+                    className.contains("VisualSearch", ignoreCase = true) ||
+                    className.contains("SearchImage", ignoreCase = true)
+        }
+
+        fun isGoogleSearchOrDiscover(className: String): Boolean {
+            val c = className.lowercase()
+            return c.contains("googleapp") ||
+                    c.contains("searchactivity") ||
+                    c.contains("searchplate") ||
+                    c.contains("searchgate") ||
+                    c.contains("queryentry") ||
+                    c.contains("searchwidget") ||
+                    c.contains("discover") ||
+                    c.contains("feed") ||
+                    c.contains("websearch")
+        }
+
+        fun isAllowedGoogleAppClass(className: String): Boolean {
+            if (isLensOrVisualSearch(className) || isGoogleSearchOrDiscover(className)) return false
+            return true
+        }
+
+        fun isLensTriggerText(text: String): Boolean {
+            val t = text.lowercase().trim()
+            if (t.isEmpty()) return false
+            return t == "lens" ||
+                    t.contains("google lens") ||
+                    t.contains("গুগল লেন্স") ||
+                    t.contains("লেন্স") ||
+                    t.contains("search image") ||
+                    t.contains("circle to search")
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -94,6 +132,26 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
         }
 
         val pkg = event.packageName?.toString() ?: return
+
+        // 0.4. Intercept clicks on Google Lens / Visual Search entry points anywhere on device
+        if (event.eventType == AccessibilityEvent.TYPE_VIEW_CLICKED) {
+            val clickText = buildString {
+                event.text?.forEach { append(it).append(" ") }
+                event.contentDescription?.let { append(it).append(" ") }
+            }
+            if (isLensTriggerText(clickText)) {
+                Log.w(TAG, "Blocked Lens trigger click in $pkg: $clickText")
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                mainHandler.post {
+                    Toast.makeText(
+                        applicationContext,
+                        "⚠️ Focus Guard: Google Lens এবং Web Search বন্ধ রাখা হয়েছে।",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+                return
+            }
+        }
 
         // 0.5. Settings Tamper Protection: Prevent turning off Focus Guard accessibility service
         // Other accessibility services (TalkBack, Select to Speak, etc.) can be freely managed.
@@ -121,11 +179,17 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
             }
         }
 
-        // Reset Circle to Search session state when top-level window switches to another package
+        // Track Gemini session state
+        if (pkg == DevicePolicyController.GEMINI_BARD_PACKAGE) {
+            isGeminiActive = true
+        }
+
+        // Reset Gemini session state when top-level window switches to another package
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
-            pkg != "com.google.android.googlequicksearchbox"
+            pkg != "com.google.android.googlequicksearchbox" &&
+            pkg != DevicePolicyController.GEMINI_BARD_PACKAGE
         ) {
-            isCircleToSearchActive = false
+            isGeminiActive = false
         }
 
         // 1. Samsung Galaxy Store Guard (com.sec.android.app.samsungapps)
@@ -249,57 +313,43 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
     private fun handleGoogleAppEvent(event: AccessibilityEvent) {
         val className = event.className?.toString() ?: ""
 
-        // Allowed Features: Gemini AI, Bard, Robin Assistant, Google Lens OCR, On-screen Text Copy, Assistant/Overlay
-        val isCtsOrLensClass = className.contains("Gemini", ignoreCase = true) ||
-                className.contains("Bard", ignoreCase = true) ||
-                className.contains("Robin", ignoreCase = true) ||
-                className.contains("Halo", ignoreCase = true) ||
-                className.contains("Assistant", ignoreCase = true) ||
-                className.contains("Deeplink", ignoreCase = true) ||
-                className.contains("Voice", ignoreCase = true) ||
-                className.contains("Lens", ignoreCase = true) ||
-                className.contains("Omnient", ignoreCase = true) ||
-                className.contains("CircleToSearch", ignoreCase = true) ||
-                className.contains("ContextualSearch", ignoreCase = true) ||
-                className.contains("TextSelection", ignoreCase = true) ||
-                className.contains("TextOverlay", ignoreCase = true) ||
-                className.contains("OpaOverlay", ignoreCase = true) ||
-                className.contains("TouchOutside", ignoreCase = true) ||
-                className.contains("TranslateOverlay", ignoreCase = true) ||
-                className.contains("Selection", ignoreCase = true) ||
-                className.contains("SelectText", ignoreCase = true) ||
-                className.contains("NowBar", ignoreCase = true)
-
-        if (isCtsOrLensClass || isCircleToSearchActive) {
-            if (!className.contains("Gemini", ignoreCase = true) &&
-                !className.contains("Bard", ignoreCase = true) &&
-                !className.contains("Assistant", ignoreCase = true)
-            ) {
-                isCircleToSearchActive = true
+        // 1. Google Lens / Circle to Search (Omnient) / Visual Search - STRICTLY BLOCKED
+        if (isLensOrVisualSearch(className)) {
+            val now = System.currentTimeMillis()
+            if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
+                lastBlockTimestamp = now
+                Log.w(TAG, "Google Lens / Visual Search blocked ($className). Closing with Action Not Allowed.")
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                mainHandler.post {
+                    Toast.makeText(
+                        applicationContext,
+                        "⚠️ Focus Guard: Google Lens এবং Web Search বন্ধ রাখা হয়েছে।",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
             return
         }
 
-        // Only evaluate blocking on top-level window transitions (TYPE_WINDOW_STATE_CHANGED)
-        // NEVER block on internal View events (FrameLayout, LinearLayout, etc.)
-        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
+        // 2. Standalone Google App / Search / Discover / Feed - STRICTLY BLOCKED
+        if (isGoogleSearchOrDiscover(className)) {
+            val now = System.currentTimeMillis()
+            if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
+                lastBlockTimestamp = now
+                Log.w(TAG, "Google Search / Discover blocked ($className). Closing with Action Not Allowed.")
+                performGlobalAction(GLOBAL_ACTION_HOME)
+                mainHandler.post {
+                    Toast.makeText(
+                        applicationContext,
+                        "Action not allowed: Google App is restricted",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
             return
         }
 
-        // Standalone Google App launched directly by user (SearchActivity, GoogleAppActivity, etc.)
-        val now = System.currentTimeMillis()
-        if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
-            lastBlockTimestamp = now
-            Log.w(TAG, "Google App launched directly ($className). Closing with Action Not Allowed.")
-            performGlobalAction(GLOBAL_ACTION_HOME)
-            mainHandler.post {
-                Toast.makeText(
-                    applicationContext,
-                    "Action not allowed: Google App is restricted",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        }
+        // 3. All other internal components (Gemini AI assistant session, voice surfaces, assistant dialogs) - ALLOWED
     }
 
     private val samsungSystemComponents = setOf(

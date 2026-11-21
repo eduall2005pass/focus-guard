@@ -21,6 +21,8 @@ object StudyNavigationGuard {
         "google.com", "www.google.com", "docs.google.com", "drive.google.com",
         "sheets.google.com", "slides.google.com",
         "translate.google.com", "translate.googleapis.com",
+        "lens.google.com", "www.lens.google.com", "lens.google", "www.lens.google",
+        "images.google.com", "www.images.google.com",
         "accounts.youtube.com", "youtube.com", "www.youtube.com", "m.youtube.com",
         "music.youtube.com", "youtu.be", "youtubei.googleapis.com", "i.ytimg.com",
         "youtube-nocookie.com", "www.youtube-nocookie.com",

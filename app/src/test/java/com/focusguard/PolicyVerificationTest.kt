@@ -505,23 +505,23 @@ class PolicyVerificationTest {
         assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("www.google.com"))
         assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("suggestqueries.google.com"))
 
-        // 3. Gemini, Circle to Search, Lens, and OCR terms are allowed, while Discover & Search Widget activities are blocked
-        val allowedFeatureNames = listOf("LensActivity", "OmnientActivity", "CircleToSearch", "TextSelectionActivity", "OpaOverlay", "GeminiGatewayActivity", "BardEntryPointActivity", "RobinEntryPointActivity")
+        // 3. Gemini terms are allowed, while Lens, CTS, and Search Widget activities are blocked
+        val allowedFeatureNames = listOf("GeminiGatewayActivity", "BardEntryPointActivity", "RobinEntryPointActivity", "MainAssistantDeeplinkAnimated", "BreenActivity")
         for (name in allowedFeatureNames) {
-            val isAllowed = name.contains("Lens", ignoreCase = true) ||
-                    name.contains("Omnient", ignoreCase = true) ||
-                    name.contains("CircleToSearch", ignoreCase = true) ||
-                    name.contains("TextSelection", ignoreCase = true) ||
-                    name.contains("OpaOverlay", ignoreCase = true) ||
-                    name.contains("Gemini", ignoreCase = true) ||
+            val isAllowed = name.contains("Gemini", ignoreCase = true) ||
                     name.contains("Bard", ignoreCase = true) ||
-                    name.contains("Robin", ignoreCase = true)
+                    name.contains("Robin", ignoreCase = true) ||
+                    name.contains("Deeplink", ignoreCase = true) ||
+                    name.contains("Breen", ignoreCase = true)
             assertTrue("Feature $name must be allowed", isAllowed)
         }
 
-        val blockedFeatureNames = listOf("SearchActivity", "DiscoverActivity", "FeedActivity", "SearchgateActivity", "QueryEntryActivity", "SearchWidgetProvider")
+        val blockedFeatureNames = listOf("LensActivity", "OmnientActivity", "CircleToSearch", "SearchActivity", "DiscoverActivity", "FeedActivity", "SearchgateActivity", "QueryEntryActivity", "SearchWidgetProvider")
         for (name in blockedFeatureNames) {
-            val isBlocked = name.contains("Search", ignoreCase = true) ||
+            val isBlocked = name.contains("Lens", ignoreCase = true) ||
+                    name.contains("Omnient", ignoreCase = true) ||
+                    name.contains("CircleToSearch", ignoreCase = true) ||
+                    name.contains("Search", ignoreCase = true) ||
                     name.contains("Discover", ignoreCase = true) ||
                     name.contains("Feed", ignoreCase = true) ||
                     name.contains("Searchgate", ignoreCase = true) ||
@@ -529,5 +529,87 @@ class PolicyVerificationTest {
                     name.contains("Widget", ignoreCase = true)
             assertTrue("Feature $name must be blocked", isBlocked)
         }
+    }
+
+    @Test
+    fun verifyGoogleLensAndVisualSearchBlockedWhileGeminiAllowed() {
+        // 1. Navigation Guard must block Google Lens & Google Images hosts
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("lens.google.com"))
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("www.lens.google.com"))
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("lens.google"))
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("images.google.com"))
+
+        // 2. Accessibility Service classifier must block Google Lens, Circle to Search & Visual Search activities
+        val blockedLensFeatures = listOf(
+            "com.google.android.apps.lens.MainActivity",
+            "com.google.android.apps.lens.SearchImageActivity",
+            "com.google.android.apps.search.lens.LensShareEntryPointActivity",
+            "com.google.android.apps.search.omnient.OmnientActivity",
+            "CircleToSearch",
+            "ContextualSearchEntrypoint",
+            "VisualSearchActivity"
+        )
+        for (className in blockedLensFeatures) {
+            assertFalse(
+                "Class $className must NOT be allowed in Google App",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isAllowedGoogleAppClass(className)
+            )
+            assertTrue(
+                "Class $className must be recognized as Lens / Visual Search",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensOrVisualSearch(className)
+            )
+        }
+
+        // 3. Google Search & Discover activities must be blocked
+        val blockedSearchFeatures = listOf(
+            "com.google.android.apps.search.googleapp.activity.GoogleAppActivity",
+            "com.google.android.apps.gsa.searchplate.widget.SearchActivity",
+            "com.google.android.apps.gsa.staticplugins.searchgate.SearchgateActivity",
+            "com.google.android.apps.gsa.queryentry.QueryEntryActivity",
+            "com.google.android.apps.search.googleapp.discover.DiscoverActivity"
+        )
+        for (className in blockedSearchFeatures) {
+            assertFalse(
+                "Search class $className must NOT be allowed in Google App",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isAllowedGoogleAppClass(className)
+            )
+            assertTrue(
+                "Class $className must be recognized as Google search or discover",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isGoogleSearchOrDiscover(className)
+            )
+        }
+
+        // 4. Gemini Assistant components must be allowed
+        val allowedGeminiFeatures = listOf(
+            "com.google.android.apps.search.assistant.surfaces.voice.robin.main.MainActivity",
+            "com.google.android.apps.search.assistant.surfaces.breen.BreenActivity",
+            "com.google.android.apps.search.assistant.deeplink.MainAssistantDeeplinkAnimated",
+            "com.google.android.apps.gsa.staticplugins.opa.OpaOverlay",
+            "GeminiGatewayActivity",
+            "BardEntryPointActivity",
+            "il"
+        )
+        for (className in allowedGeminiFeatures) {
+            assertTrue(
+                "Gemini feature $className must be allowed",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isAllowedGoogleAppClass(className)
+            )
+            assertFalse(
+                "Gemini feature $className must NOT be classified as Lens",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensOrVisualSearch(className)
+            )
+            assertFalse(
+                "Gemini feature $className must NOT be classified as Search/Discover",
+                com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isGoogleSearchOrDiscover(className)
+            )
+        }
+
+        // 4. Lens trigger text detection
+        assertTrue(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("Google Lens"))
+        assertTrue(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("Lens"))
+        assertTrue(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("গুগল লেন্স"))
+        assertTrue(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("Circle to search"))
+        assertFalse(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("Gemini"))
+        assertFalse(com.focusguard.accessibility.WhatsAppCommunityAccessibilityService.isLensTriggerText("Save"))
     }
 }

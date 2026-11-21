@@ -1126,7 +1126,10 @@ class DevicePolicyController(private val context: Context) {
             android.provider.Settings.Secure.putInt(context.contentResolver, "assistant_screen_type", 0)
             android.provider.Settings.Secure.putInt(context.contentResolver, "assistant_screen_type_left_enable", 0)
             android.provider.Settings.Secure.putInt(context.contentResolver, "touch_and_hold_to_search", 0)
-            Log.i(TAG, "Enforced Samsung One UI: page_minus_one_type = 0 (Discover Feed Off) and assistant screens off")
+            try {
+                android.provider.Settings.Secure.putString(context.contentResolver, "contextual_search_package", "")
+            } catch (_: Exception) {}
+            Log.i(TAG, "Enforced Samsung One UI: page_minus_one_type = 0 (Discover Feed Off), touch_and_hold_to_search = 0 (CTS Off)")
         } catch (e: Exception) {
             Log.d(TAG, "Notice setting page_minus_one_type / assistant screens: ${e.message}")
         }
