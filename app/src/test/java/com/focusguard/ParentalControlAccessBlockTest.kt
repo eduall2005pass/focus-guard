@@ -12,11 +12,6 @@ class ParentalControlAccessBlockTest {
     }
 
     @Test
-    fun testFactoryResetEnabledKeyConstant() {
-        assertEquals("key_factory_reset_enabled", DevicePolicyController.KEY_FACTORY_RESET_ENABLED)
-    }
-
-    @Test
     fun testParentalCareNotCriticalSystemPackage() {
         assertFalse(
             "Parental care package must not be in CRITICAL_SYSTEM_PACKAGES to allow suspension",

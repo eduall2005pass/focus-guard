@@ -18,13 +18,19 @@ class PolicyVerificationTest {
         "com.ibbl.ibbl_ismart",
         "com.ibbl.ismart",
         "com.ibbl.cellfin",
+        "com.ionicframework.icellular894076",
+        "com.ibbl.mcash",
         "com.bKash.customerapp",
         "com.konasl.nagad",
         "com.dbbl.mbs.apps.main",
 
         // Transportation & Delivery
         "com.google.android.apps.maps",
+        "com.bd.rapidpass.app",
         "bd.gov.dmtcl.rapidpass",
+        "bd.gov.rapidpass",
+        "com.shohoz.dtrainpwa",
+        "com.shohoz.rail",
         "com.pathao.user",
         "com.ubercab",
         "com.global.foodpanda.android",
@@ -35,7 +41,11 @@ class PolicyVerificationTest {
         "com.openai.chatgpt",
         "com.anthropic.claude",
         "com.google.android.apps.bard",
+        "com.google.android.apps.labs.language.tailwind",
         "com.google.android.apps.notebooklm",
+        "com.livemcq.livemcq",
+        "com.google.android.keep",
+        "com.github.android",
         "com.samsung.android.app.notes",
         "com.tos.namajtime",
         "com.muslimbangla",
@@ -46,6 +56,10 @@ class PolicyVerificationTest {
         "com.elsevier.threeD4Medical.CompleteAnatomy",
 
         // Google Productivity
+        "ridmik.keyboard",
+        "net.ridmik.keyboard",
+        "com.google.android.apps.translate",
+        "com.google.android.apps.authenticator2",
         "com.google.android.gm",
         "com.google.android.apps.docs",
         "com.google.android.apps.docs.editors.docs",
@@ -53,14 +67,17 @@ class PolicyVerificationTest {
         "com.google.android.apps.photos",
 
         // Critical System Components
+        "ru.zdevs.zarchiver",
+        "com.google.android.apps.credentialmanager",
+        "com.android.credentialmanager",
+        "com.google.android.apps.adm",
         "com.google.android.webview",
         "com.google.android.gms",
         "com.android.vending",
         "teletalk.teletalkcustomerapp",
         "com.sec.android.app.music",
         "com.samsung.android.samsungpass",
-        "com.samsung.android.samsungpassautofill",
-        "com.google.android.googlequicksearchbox"
+        "com.samsung.android.samsungpassautofill"
     )
 
     // Test blocked packages required by specification
@@ -99,11 +116,17 @@ class PolicyVerificationTest {
             AppItem("com.ibbl.ibbl_ismart", "iSmart", AppCategory.BANKING_PAYMENTS),
             AppItem("com.ibbl.ismart", "iSmart", AppCategory.BANKING_PAYMENTS),
             AppItem("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS),
+            AppItem("com.ionicframework.icellular894076", "IBBL iSmart", AppCategory.BANKING_PAYMENTS),
+            AppItem("com.ibbl.mcash", "mCash", AppCategory.BANKING_PAYMENTS),
             AppItem("com.bKash.customerapp", "bKash", AppCategory.BANKING_PAYMENTS),
             AppItem("com.konasl.nagad", "Nagad", AppCategory.BANKING_PAYMENTS),
             AppItem("com.dbbl.mbs.apps.main", "Rocket", AppCategory.BANKING_PAYMENTS),
             AppItem("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION),
+            AppItem("com.bd.rapidpass.app", "Rapid Pass", AppCategory.TRANSPORTATION),
             AppItem("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION),
+            AppItem("bd.gov.rapidpass", "Rapid Pass Portal", AppCategory.TRANSPORTATION),
+            AppItem("com.shohoz.dtrainpwa", "Rail Sheba", AppCategory.TRANSPORTATION),
+            AppItem("com.shohoz.rail", "Bangladesh Railway", AppCategory.TRANSPORTATION),
             AppItem("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION),
             AppItem("com.ubercab", "Uber", AppCategory.TRANSPORTATION),
             AppItem("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION),
@@ -112,7 +135,11 @@ class PolicyVerificationTest {
             AppItem("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY),
             AppItem("com.anthropic.claude", "Claude", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.bard", "Gemini", AppCategory.AI_STUDY),
+            AppItem("com.google.android.apps.labs.language.tailwind", "NotebookLM", AppCategory.AI_STUDY),
             AppItem("com.google.android.apps.notebooklm", "NotebookLM", AppCategory.AI_STUDY),
+            AppItem("com.livemcq.livemcq", "Live MCQ", AppCategory.AI_STUDY),
+            AppItem("com.google.android.keep", "Google Keep", AppCategory.AI_STUDY),
+            AppItem("com.github.android", "GitHub", AppCategory.AI_STUDY),
             AppItem("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY),
             AppItem("com.tos.namajtime", "Muslim Bangla", AppCategory.AI_STUDY),
             AppItem("com.muslimbangla", "Muslim Bangla (Alt)", AppCategory.AI_STUDY),
@@ -121,19 +148,26 @@ class PolicyVerificationTest {
             AppItem("com.greentech.quran", "Al Quran (Tafsir & by Word)", AppCategory.AI_STUDY),
             AppItem("com.a3d4medical.completeanatomy", "Complete Anatomy", AppCategory.AI_STUDY),
             AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY),
+            AppItem("ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("net.ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.google.android.apps.translate", "Google Translate", AppCategory.GOOGLE_PRODUCTIVITY),
+            AppItem("com.google.android.apps.authenticator2", "Google Authenticator", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
             AppItem("com.google.android.apps.photos", "Google Photos", AppCategory.GOOGLE_PRODUCTIVITY),
+            AppItem("ru.zdevs.zarchiver", "ZArchiver", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.google.android.apps.credentialmanager", "Google Password Manager", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.android.credentialmanager", "Credential Manager", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+            AppItem("com.google.android.apps.adm", "Find Hub", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
             AppItem("com.google.android.webview", "System WebView", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
             AppItem("com.google.android.gms", "Play Services", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
             AppItem("com.android.vending", "Play Store", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
             AppItem("teletalk.teletalkcustomerapp", "My Teletalk", AppCategory.ESSENTIAL_SYSTEM),
             AppItem("com.sec.android.app.music", "Samsung Music", AppCategory.ESSENTIAL_SYSTEM),
             AppItem("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-            AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-            AppItem("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
+            AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true)
         ).associateBy { it.packageName }
 
         for (pkg in expectedAllowedPackages) {
@@ -187,13 +221,33 @@ class PolicyVerificationTest {
     @Test
     fun verifyIrreversibleRestrictionsIncludeAdbDisallow() {
         val enforcedRestrictions = listOf(
-            "no_debugging_features", // UserManager.DISALLOW_DEBUGGING_FEATURES
-            "no_config_vpn",        // UserManager.DISALLOW_CONFIG_VPN
-            "no_safe_boot",         // UserManager.DISALLOW_SAFE_BOOT
-            "no_uninstall_apps"     // UserManager.DISALLOW_UNINSTALL_APPS
+            "no_install_unknown_sources", // UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES
+            "no_config_vpn",             // UserManager.DISALLOW_CONFIG_VPN
+            "no_safe_boot",              // UserManager.DISALLOW_SAFE_BOOT
+            "no_install_apps"            // UserManager.DISALLOW_INSTALL_APPS
         )
-        assertTrue("Must disallow ADB debugging to prevent shell reversal", enforcedRestrictions.contains("no_debugging_features"))
-        assertTrue("Must disallow uninstallation", enforcedRestrictions.contains("no_uninstall_apps"))
+        assertTrue("Must disallow unknown sources", enforcedRestrictions.contains("no_install_unknown_sources"))
+        assertTrue("Must disallow new installations", enforcedRestrictions.contains("no_install_apps"))
+        assertFalse("Must NOT disallow factory reset; Focus Guard has zero relation with factory reset", enforcedRestrictions.contains("no_factory_reset"))
+        assertFalse("Must NOT disallow uninstallation system-wide so unwanted apps can be removed", enforcedRestrictions.contains("no_uninstall_apps"))
+    }
+
+    @Test
+    fun verifySamsungCloudAndBackupComponentsNeverBlocked() {
+        val criticalSet = com.focusguard.dpc.DevicePolicyController.CRITICAL_SYSTEM_PACKAGES
+        val cloudPackages = listOf(
+            "com.samsung.android.scloud",
+            "com.samsung.android.scloud.backup",
+            "com.samsung.android.scloud.sync",
+            "com.sec.android.easyMover",
+            "com.sec.android.easyMover.Agent",
+            "com.samsung.android.mobileservice",
+            "com.osp.app.signin",
+            "com.google.android.backuptransport"
+        )
+        for (pkg in cloudPackages) {
+            assertTrue("Samsung cloud package must be protected in CRITICAL_SYSTEM_PACKAGES: $pkg", criticalSet.contains(pkg))
+        }
     }
 
     @Test
@@ -209,8 +263,7 @@ class PolicyVerificationTest {
             "com.google.android.gms",              // Google Play Services
             "com.google.android.webview",          // Android System WebView
             "com.samsung.android.samsungpass",     // Samsung Pass Framework
-            "com.samsung.android.samsungpassautofill", // Samsung Pass Autofill
-            "com.google.android.googlequicksearchbox" // Google App Framework (Circle to Search & OCR)
+            "com.samsung.android.samsungpassautofill" // Samsung Pass Autofill
         )
         for (pkg in requiredUpdatePackages) {
             assertTrue("Critical update package must be protected in CRITICAL_SYSTEM_PACKAGES: $pkg", criticalSet.contains(pkg))
@@ -293,8 +346,7 @@ class PolicyVerificationTest {
             "com.global.foodpanda.android",
             "com.usbangla.foodi",
             "com.daraz.android",
-            "com.google.android.gm",
-            "com.google.android.googlequicksearchbox"
+            "com.google.android.gm"
         )
         for (pkg in verifiedPkgs) {
             assertTrue("Delivery/Shopping/Gmail/Google Framework must be in expectedAllowedPackages: $pkg", expectedAllowedPackages.contains(pkg))
@@ -439,5 +491,40 @@ class PolicyVerificationTest {
         assertTrue("Whitelist string must contain com.whatsapp", joined.contains("com.whatsapp"))
         assertTrue("Whitelist string must contain com.brilliant.connect.com.bd", joined.contains("com.brilliant.connect.com.bd"))
         assertTrue("Whitelist string must contain com.bKash.customerapp", joined.contains("com.bKash.customerapp"))
+    }
+
+    @Test
+    fun verifyControlledGoogleAppPolicy() {
+        val restrictedSet = com.focusguard.dpc.DevicePolicyController.RESTRICTED_SYSTEM_PACKAGES
+
+        // 1. Google App package is restricted and hidden/suspended by DPC
+        assertTrue(restrictedSet.contains("com.google.android.googlequicksearchbox"))
+
+        // 2. General web search & search suggestions are blocked by navigation guard
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("google.com"))
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("www.google.com"))
+        assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("suggestqueries.google.com"))
+
+        // 3. Circle to Search, Lens, and OCR terms are allowed, while Discover & Search Widget activities are blocked
+        val allowedFeatureNames = listOf("LensActivity", "OmnientActivity", "CircleToSearch", "TextSelectionActivity", "OpaOverlay")
+        for (name in allowedFeatureNames) {
+            val isAllowed = name.contains("Lens", ignoreCase = true) ||
+                    name.contains("Omnient", ignoreCase = true) ||
+                    name.contains("CircleToSearch", ignoreCase = true) ||
+                    name.contains("TextSelection", ignoreCase = true) ||
+                    name.contains("OpaOverlay", ignoreCase = true)
+            assertTrue("Feature $name must be allowed", isAllowed)
+        }
+
+        val blockedFeatureNames = listOf("SearchActivity", "DiscoverActivity", "FeedActivity", "SearchgateActivity", "QueryEntryActivity", "SearchWidgetProvider")
+        for (name in blockedFeatureNames) {
+            val isBlocked = name.contains("Search", ignoreCase = true) ||
+                    name.contains("Discover", ignoreCase = true) ||
+                    name.contains("Feed", ignoreCase = true) ||
+                    name.contains("Searchgate", ignoreCase = true) ||
+                    name.contains("QueryEntry", ignoreCase = true) ||
+                    name.contains("Widget", ignoreCase = true)
+            assertTrue("Feature $name must be blocked", isBlocked)
+        }
     }
 }

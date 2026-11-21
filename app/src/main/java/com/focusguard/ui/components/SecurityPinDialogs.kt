@@ -330,163 +330,13 @@ fun ChangeSecurityPinDialog(
     )
 }
 
-@Composable
-fun FactoryResetConfirmDialog(
-    allowDismiss: Boolean = true,
-    onResetConfirmed: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF5252)) },
-        title = {
-            Text(
-                text = "⚠️ চূড়ান্ত সতর্কতা",
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFFF5252)
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "আপনি কি নিশ্চিতভাবে ফোনটি ফ্যাক্টরি রিসেট করতে চান? আপনার ডিভাইসের সমস্ত ডাটা, ছবি ও অ্যাকাউন্ট মুছে যাবে এবং ফোন নতুনের মতো রিস্টার্ট হবে।",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "লক্ষ্য করুন: Focus Guard রিসেট করতে কোনো অতিরিক্ত পিনের প্রয়োজন নেই। চূড়ান্ত নিশ্চিত করতে নিচের বোতামটি চাপুন।",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextMuted
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onResetConfirmed,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White)
-            ) {
-                Text("হ্যাঁ, ফোন রিসেট করুন", fontWeight = FontWeight.Bold)
-            }
-        },
-        dismissButton = if (allowDismiss) {
-            {
-                TextButton(onClick = onDismiss) {
-                    Text("বাতিল", color = TextMuted)
-                }
-            }
-        } else null,
-        containerColor = DarkSurface,
-        textContentColor = TextPrimary
-    )
-}
-
-@Composable
-fun SecurityPinAndResetCard(
-    modifier: Modifier = Modifier,
-    pinManager: SecurityPinManager? = null,
-    dpcController: DevicePolicyController? = null
-) {
-    val context = LocalContext.current
-    val actualPinManager = pinManager ?: remember { SecurityPinManager(context) }
-    val actualDpcController = dpcController ?: remember { DevicePolicyController(context) }
-    var showChangePinDialog by remember { mutableStateOf(false) }
-    var showFactoryResetDialog by remember { mutableStateOf(false) }
-
-    if (showChangePinDialog) {
-        ChangeSecurityPinDialog(
-            pinManager = actualPinManager,
-            onDismiss = { showChangePinDialog = false }
-        )
-    }
-
-    if (showFactoryResetDialog) {
-        FactoryResetConfirmDialog(
-            onResetConfirmed = {
-                showFactoryResetDialog = false
-                val success = actualDpcController.wipeDevice()
-                if (!success) {
-                    Toast.makeText(context, "রিসেট ব্যর্থ হয়েছে। ডিভাইস ওনার পারমিশন নিশ্চিত করুন।", Toast.LENGTH_LONG).show()
-                }
-            },
-            onDismiss = { showFactoryResetDialog = false }
-        )
-    }
-
-    Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Icon(
-                    Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = GuardGreenText,
-                    modifier = Modifier.size(24.dp)
-                )
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "সিকিউরিটি পিন ও রিসেট কন্ট্রোল",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold, color = TextPrimary)
-                    )
-                    Text(
-                        text = "প্যারেন্টাল কন্ট্রোল দ্বারা রিসেট নিয়ন্ত্রণযোগ্য",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, color = TextMuted)
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { showChangePinDialog = true },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = GuardGreenText),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Password, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("পিন পরিবর্তন", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                }
-
-                Button(
-                    onClick = {
-                        if (!actualDpcController.isFactoryResetFeatureEnabled()) {
-                            Toast.makeText(context, "প্যারেন্টাল কন্ট্রোল পলিসি অনুযায়ী রিসেট ফিচার বন্ধ রয়েছে।", Toast.LENGTH_SHORT).show()
-                        } else {
-                            showFactoryResetDialog = true
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("ফোন রিসেট", fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-    }
-}
-
 /**
  * 3-Dot Security Menu placed beside Focus Guard header.
- * Provides:
- * 1. প্যারেন্টাল কন্ট্রোল ও সিকিউরিটি সেটিংস (PIN protected)
- *    - প্যারেন্টাল কন্ট্রোল অ্যাক্সেস চালু/বন্ধ
- *    - প্যারেন্টাল কন্ট্রোল দ্বারা ফ্যাক্টরি রিসেট ফিচার চালু/বন্ধ
- * 2. ফোন ফ্যাক্টরি রিসেট (PIN মুক্ত, চূড়ান্ত সতর্কতা সহ সরাসরি রিসেট)
- * 3. পিন পরিবর্তন (Change PIN)
+ * Gated by Focus Guard Security PIN:
+ * User must verify Focus Guard PIN before entering the menu.
+ * Contains EXACTLY 2 options:
+ * 1. Settings-এর Parental Control option-এর access on/off করা
+ * 2. Focus Guard-এর সিকিউরিটি পিন পরিবর্তন (Change PIN)
  */
 @Composable
 fun SecurityThreeDotMenu(
@@ -499,11 +349,9 @@ fun SecurityThreeDotMenu(
     val actualPinManager = pinManager ?: remember { SecurityPinManager(context) }
     val actualDpcController = dpcController ?: remember { DevicePolicyController(context) }
 
-    var showDropdownMenu by remember { mutableStateOf(false) }
     var showPinDialog by remember { mutableStateOf(false) }
     var showSecurityOptionsDialog by remember { mutableStateOf(false) }
     var showChangePinDialog by remember { mutableStateOf(false) }
-    var showFactoryResetDialog by remember { mutableStateOf(false) }
 
     if (showPinDialog) {
         EnterSecurityPinDialog(
@@ -520,7 +368,6 @@ fun SecurityThreeDotMenu(
 
     if (showSecurityOptionsDialog) {
         var isParentalBlocked by remember { mutableStateOf(actualDpcController.isParentalControlAccessBlocked()) }
-        var isResetEnabled by remember { mutableStateOf(actualDpcController.isFactoryResetFeatureEnabled()) }
 
         AlertDialog(
             onDismissRequest = { showSecurityOptionsDialog = false },
@@ -536,7 +383,7 @@ fun SecurityThreeDotMenu(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "প্যারেন্টাল কন্ট্রোল সেটিংস",
+                        text = "সিকিউরিটি মেনু",
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
@@ -548,12 +395,12 @@ fun SecurityThreeDotMenu(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "পিন যাচাই সফল হয়েছে। অভিভাবকীয় নিয়ন্ত্রণ ও রিসেট ফিচার পরিচালনা করুন:",
+                        text = "পিন যাচাই সফল হয়েছে। একটি অপশন নির্বাচন করুন:",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextMuted
                     )
 
-                    // 1. Parental Control Access Block/Unblock
+                    // 1. Settings Parental Control Access Toggle (On/Off)
                     OutlinedButton(
                         onClick = {
                             val newTarget = !isParentalBlocked
@@ -595,49 +442,7 @@ fun SecurityThreeDotMenu(
                         }
                     }
 
-                    // 2. Factory Reset Feature Toggle via Parental Control
-                    OutlinedButton(
-                        onClick = {
-                            val newTarget = !isResetEnabled
-                            val success = actualDpcController.setFactoryResetFeatureEnabled(newTarget)
-                            if (success) {
-                                isResetEnabled = newTarget
-                                val msg = if (newTarget) {
-                                    "প্যারেন্টাল কন্ট্রোল: রিসেট ফিচার সক্রিয় করা হয়েছে।"
-                                } else {
-                                    "প্যারেন্টাল কন্ট্রোল: রিসেট ফিচার নিষ্ক্রিয় করা হয়েছে (Blocked)।"
-                                }
-                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "ডিভাইস ওনার অনুমতি প্রয়োজন।", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (isResetEnabled) GuardGreenText else Color(0xFFFFB74D)
-                        ),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Icon(
-                            if (isResetEnabled) Icons.Default.CheckCircle else Icons.Default.Block,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.Start) {
-                            Text(
-                                if (isResetEnabled) "রিসেট ফিচার নিষ্ক্রিয় করুন (Disable Reset)" else "রিসেট ফিচার সক্রিয় করুন (Enable Reset)",
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            Text(
-                                if (isResetEnabled) "রিসেট স্ট্যাটাস: সচল (Allowed) 🔓" else "রিসেট স্ট্যাটাস: বন্ধ (Blocked by Policy) 🔒",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (isResetEnabled) GuardGreenText else Color(0xFFFFB74D)
-                            )
-                        }
-                    }
-
-                    // 3. Change PIN
+                    // 2. Focus Guard Security PIN Change (Not Parental Control PIN)
                     OutlinedButton(
                         onClick = {
                             showSecurityOptionsDialog = false
@@ -649,26 +454,14 @@ fun SecurityThreeDotMenu(
                     ) {
                         Icon(Icons.Default.Password, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("পিন পরিবর্তন (Change PIN)", fontWeight = FontWeight.SemiBold)
-                    }
-
-                    // 4. Factory Reset (Confirmation only, zero PIN!)
-                    Button(
-                        onClick = {
-                            showSecurityOptionsDialog = false
-                            if (!isResetEnabled) {
-                                Toast.makeText(context, "প্যারেন্টাল কন্ট্রোল পলিসি অনুযায়ী রিসেট ফিচার বন্ধ রয়েছে।", Toast.LENGTH_SHORT).show()
-                            } else {
-                                showFactoryResetDialog = true
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F), contentColor = Color.White),
-                        shape = RoundedCornerShape(10.dp)
-                    ) {
-                        Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("ফোন ফ্যাক্টরি রিসেট (Factory Reset)", fontWeight = FontWeight.Bold)
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text("পিন পরিবর্তন (Change PIN)", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                "Focus Guard-এর সিকিউরিটি পিন পরিবর্তন করুন",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextMuted
+                            )
+                        }
                     }
                 }
             },
@@ -690,68 +483,12 @@ fun SecurityThreeDotMenu(
         )
     }
 
-    if (showFactoryResetDialog) {
-        FactoryResetConfirmDialog(
-            onResetConfirmed = {
-                showFactoryResetDialog = false
-                val success = actualDpcController.wipeDevice()
-                if (!success) {
-                    Toast.makeText(context, "রিসেট ব্যর্থ হয়েছে। ডিভাইস ওনার পারমিশন নিশ্চিত করুন।", Toast.LENGTH_LONG).show()
-                }
-            },
-            onDismiss = { showFactoryResetDialog = false }
-        )
-    }
-
     Box(modifier = modifier) {
-        IconButton(onClick = { showDropdownMenu = true }) {
+        IconButton(onClick = { showPinDialog = true }) {
             Icon(
                 Icons.Default.MoreVert,
                 contentDescription = "Security Options",
                 tint = tint
-            )
-        }
-
-        DropdownMenu(
-            expanded = showDropdownMenu,
-            onDismissRequest = { showDropdownMenu = false },
-            modifier = Modifier.background(DarkSurface)
-        ) {
-            DropdownMenuItem(
-                text = { Text("প্যারেন্টাল কন্ট্রোল ও সিকিউরিটি", color = TextPrimary) },
-                leadingIcon = {
-                    Icon(Icons.Default.Lock, contentDescription = null, tint = GuardGreenText)
-                },
-                onClick = {
-                    showDropdownMenu = false
-                    showPinDialog = true
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text("ফোন ফ্যাক্টরি রিসেট", color = Color(0xFFFF5252), fontWeight = FontWeight.SemiBold) },
-                leadingIcon = {
-                    Icon(Icons.Default.Warning, contentDescription = null, tint = Color(0xFFFF5252))
-                },
-                onClick = {
-                    showDropdownMenu = false
-                    if (!actualDpcController.isFactoryResetFeatureEnabled()) {
-                        Toast.makeText(context, "প্যারেন্টাল কন্ট্রোল পলিসি অনুযায়ী রিসেট ফিচার বন্ধ রয়েছে।", Toast.LENGTH_SHORT).show()
-                    } else {
-                        showFactoryResetDialog = true
-                    }
-                }
-            )
-
-            DropdownMenuItem(
-                text = { Text("পিন পরিবর্তন", color = TextPrimary) },
-                leadingIcon = {
-                    Icon(Icons.Default.Password, contentDescription = null, tint = GuardGreenText)
-                },
-                onClick = {
-                    showDropdownMenu = false
-                    showChangePinDialog = true
-                }
             )
         }
     }

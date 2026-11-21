@@ -2,22 +2,61 @@ package com.focusguard.data.repository
 
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
+import android.util.Log
+import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.focusguard.data.model.AppCategory
 import com.focusguard.data.model.AppItem
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
-private val Context.dataStore by preferencesDataStore(name = "focus_guard_allowlist")
+private val Context.dataStore by preferencesDataStore(
+    name = "focus_guard_allowlist",
+    corruptionHandler = ReplaceFileCorruptionHandler { error ->
+        Log.e("FocusGuard_Allowlist", "Replacing unreadable allowlist preferences", error)
+        emptyPreferences()
+    }
+)
 
 class AllowlistRepository(private val context: Context) {
+
+    companion object {
+        private val cachedCustomAllowed = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+        @Volatile
+        private var isCollectorStarted = false
+    }
 
     private val customAllowedPackagesKey = stringSetPreferencesKey("custom_allowed_packages")
 
     val customAllowedPackagesFlow: Flow<Set<String>> = context.dataStore.data.map { preferences ->
         preferences[customAllowedPackagesKey] ?: emptySet()
+    }
+
+    init {
+        if (!isCollectorStarted) {
+            isCollectorStarted = true
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    customAllowedPackagesFlow.collect { set ->
+                        cachedCustomAllowed.clear()
+                        cachedCustomAllowed.addAll(set)
+                    }
+                } catch (e: Exception) {
+                    Log.e("FocusGuard_Allowlist", "Error caching custom allowed packages", e)
+                }
+            }
+        }
+    }
+
+    fun isCustomAllowedCached(packageName: String): Boolean {
+        return cachedCustomAllowed.contains(packageName)
     }
 
     suspend fun addCustomAllowedPackage(packageName: String) {
@@ -46,9 +85,11 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.brilliant.connect.com.bd", "Brilliant Connect", AppCategory.COMMUNICATION, note = "IP Telephony & Communication"),
 
         // Banking and Payments
+        AppItem("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS),
+        AppItem("com.ionicframework.icellular894076", "IBBL iSmart", AppCategory.BANKING_PAYMENTS),
         AppItem("com.ibbl.ibbl_ismart", "iSmart (IBBL)", AppCategory.BANKING_PAYMENTS),
         AppItem("com.ibbl.ismart", "iSmart", AppCategory.BANKING_PAYMENTS),
-        AppItem("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS),
+        AppItem("com.ibbl.mcash", "mCash (IBBL)", AppCategory.BANKING_PAYMENTS),
         AppItem("com.bKash.customerapp", "bKash", AppCategory.BANKING_PAYMENTS),
         AppItem("com.konasl.nagad", "Nagad", AppCategory.BANKING_PAYMENTS),
         AppItem("com.dbbl.mbs.apps.main", "Rocket (DBBL)", AppCategory.BANKING_PAYMENTS),
@@ -56,8 +97,11 @@ class AllowlistRepository(private val context: Context) {
 
         // Transportation, Delivery & Rides
         AppItem("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION),
-        AppItem("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION),
+        AppItem("com.bd.rapidpass.app", "Rapid Pass", AppCategory.TRANSPORTATION),
+        AppItem("bd.gov.dmtcl.rapidpass", "Rapid Pass (DMTCL)", AppCategory.TRANSPORTATION),
         AppItem("bd.gov.rapidpass", "Rapid Pass Portal", AppCategory.TRANSPORTATION),
+        AppItem("com.shohoz.dtrainpwa", "Rail Sheba", AppCategory.TRANSPORTATION, note = "Bangladesh Railway Official E-Ticket"),
+        AppItem("com.shohoz.rail", "Bangladesh Railway", AppCategory.TRANSPORTATION, note = "Bangladesh Railway Official App"),
         AppItem("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION, note = "Ride, Food, Courier & Delivery"),
         AppItem("com.ubercab", "Uber", AppCategory.TRANSPORTATION, note = "Rides & Transit"),
         AppItem("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION, note = "Food & Grocery Delivery"),
@@ -70,7 +114,11 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY),
         AppItem("com.anthropic.claude", "Claude", AppCategory.AI_STUDY),
         AppItem("com.google.android.apps.bard", "Gemini", AppCategory.AI_STUDY),
-        AppItem("com.google.android.apps.notebooklm", "NotebookLM", AppCategory.AI_STUDY),
+        AppItem("com.google.android.apps.labs.language.tailwind", "NotebookLM", AppCategory.AI_STUDY),
+        AppItem("com.google.android.apps.notebooklm", "NotebookLM (Alt)", AppCategory.AI_STUDY),
+        AppItem("com.livemcq.livemcq", "Live MCQ", AppCategory.AI_STUDY, note = "Competitive exam preparation"),
+        AppItem("com.google.android.keep", "Google Keep Notes", AppCategory.AI_STUDY),
+        AppItem("com.github.android", "GitHub", AppCategory.AI_STUDY),
         AppItem("com.google.android.apps.pdfviewer", "Google PDF Viewer", AppCategory.AI_STUDY),
         AppItem("com.adobe.reader", "Adobe Acrobat Reader", AppCategory.AI_STUDY),
         AppItem("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY),
@@ -83,13 +131,23 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, note = "3D Anatomy by Elsevier"),
 
         // Google Productivity
+        AppItem("com.google.android.apps.translate", "Google Translate", AppCategory.GOOGLE_PRODUCTIVITY),
+        AppItem("com.google.android.apps.authenticator2", "Google Authenticator", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY, note = "Email & Communication"),
         AppItem("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY),
         AppItem("com.google.android.apps.photos", "Google Photos", AppCategory.GOOGLE_PRODUCTIVITY),
 
+        // Keyboards
+        AppItem("ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Bangla Keyboard"),
+        AppItem("net.ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Bangla Keyboard"),
+
         // Essential System Applications & Critical Components
+        AppItem("ru.zdevs.zarchiver", "ZArchiver", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.google.android.apps.credentialmanager", "Google Password Manager", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.android.credentialmanager", "Credential Manager", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.google.android.apps.adm", "Find Hub", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.android.dialer", "Phone (AOSP)", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.google.android.dialer", "Phone (Google)", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.samsung.android.dialer", "Phone (Samsung)", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
@@ -142,8 +200,12 @@ class AllowlistRepository(private val context: Context) {
         // Samsung Pass & Security Credentials
         AppItem("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Biometric credentials & passkeys"),
         AppItem("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.samsung.android.authfw", "Samsung Authentication Framework", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.samsung.android.biometrics.app.setting", "Samsung Biometrics & Passkeys", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.samsung.android.spay", "Samsung Wallet / Pass", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.samsung.android.spaymini", "Samsung Pay Mini", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.samsung.android.mobileservice", "Samsung Experience Service", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
+        AppItem("com.osp.app.signin", "Samsung Account", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
 
         // Critical Framework & Safety Components (NEVER HIDE)
         AppItem("com.google.android.webview", "Android System WebView", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Preserves in-app web auth and banking"),
@@ -155,8 +217,7 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.google.android.packageinstaller", "Package Installer", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.android.packageinstaller", "Package Installer (AOSP)", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
         AppItem("com.google.android.permissioncontroller", "Permission Controller", AppCategory.ESSENTIAL_SYSTEM, isEssential = true),
-        AppItem("com.focusguard", "Focus Guard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Protected DPC Controller"),
-        AppItem("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Circle to Search & text copy active; search/feed guarded")
+        AppItem("com.focusguard", "Focus Guard", AppCategory.ESSENTIAL_SYSTEM, isEssential = true, note = "Protected DPC Controller")
     )
 
     /**
@@ -205,7 +266,8 @@ class AllowlistRepository(private val context: Context) {
         AppItem("com.snapchat.android", "Snapchat", AppCategory.BLOCKED_SOCIAL, isAllowed = false),
         AppItem("com.reddit.frontpage", "Reddit", AppCategory.BLOCKED_SOCIAL, isAllowed = false),
         AppItem("com.pinterest", "Pinterest", AppCategory.BLOCKED_SOCIAL, isAllowed = false),
-        AppItem("com.netflix.mediaclient", "Netflix", AppCategory.BLOCKED_ENTERTAINMENT, isAllowed = false)
+        AppItem("com.netflix.mediaclient", "Netflix", AppCategory.BLOCKED_ENTERTAINMENT, isAllowed = false),
+        AppItem("com.google.android.googlequicksearchbox", "Google App", AppCategory.BLOCKED_BROWSER, isAllowed = false)
     )
 
     private val predefinedAllowedMap = predefinedAllowedApps.associateBy { it.packageName }
@@ -213,6 +275,10 @@ class AllowlistRepository(private val context: Context) {
 
     fun isExplicitlyAllowed(packageName: String, customAllowed: Set<String>): Boolean {
         if (customAllowed.contains(packageName)) return true
+        return predefinedAllowedMap.containsKey(packageName)
+    }
+
+    fun isPredefinedAllowed(packageName: String): Boolean {
         return predefinedAllowedMap.containsKey(packageName)
     }
 
@@ -229,7 +295,15 @@ class AllowlistRepository(private val context: Context) {
      */
     fun getAllInstalledAppsWithStatus(customAllowed: Set<String>): List<AppItem> {
         val pm = context.packageManager
-        val installed = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+        // This screen only needs package names, labels, and application flags.
+        // Include MATCH_UNINSTALLED_PACKAGES so hidden/suspended apps can still be viewed and configured.
+        val packageFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            PackageManager.MATCH_UNINSTALLED_PACKAGES
+        } else {
+            @Suppress("DEPRECATION")
+            PackageManager.GET_UNINSTALLED_PACKAGES
+        }
+        val installed = pm.getInstalledPackages(packageFlags)
         val result = mutableListOf<AppItem>()
 
         for (pkg in installed) {
@@ -293,9 +367,17 @@ class AllowlistRepository(private val context: Context) {
         return pkgName.startsWith("com.android.server") ||
                 pkgName.startsWith("com.android.internal") ||
                 pkgName.startsWith("android") ||
+                pkgName.startsWith("com.android.providers") ||
+                pkgName == "com.android.externalstorage" ||
+                pkgName == "com.android.storagemanager" ||
+                pkgName == "com.google.android.storagemanager" ||
+                pkgName == "com.android.documentsui" ||
+                pkgName == "com.sec.android.app.myfiles" ||
                 pkgName == "com.android.keychain" ||
                 pkgName == "com.google.android.gsf" ||
                 pkgName == "com.google.android.gms" ||
-                pkgName == "com.google.android.webview"
+                pkgName == "com.google.android.webview" ||
+                pkgName.startsWith("com.android.networkstack") ||
+                pkgName.startsWith("com.google.android.networkstack")
     }
 }

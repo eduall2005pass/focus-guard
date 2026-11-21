@@ -688,38 +688,7 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
 
         val controller = devicePolicyController ?: DevicePolicyController(applicationContext).also { devicePolicyController = it }
 
-        // 1. Intercept attempts to factory reset the device from Settings ONLY when reset feature is disabled
-        val isResetEnabled = try {
-            controller.isFactoryResetFeatureEnabled()
-        } catch (_: Exception) { true }
-
-        if (!isResetEnabled) {
-            val isFactoryResetScreen = combinedText.contains("factory data reset") ||
-                    combinedText.contains("erase all data") ||
-                    combinedText.contains("ফ্যাক্টরি ডাটা রিসেট") ||
-                    combinedText.contains("সব ডেটা মুছুন") ||
-                    combinedText.contains("সব ডাটা মুছুন") ||
-                    combinedText.contains("সব রিসেট করুন") ||
-                    (combinedText.contains("reset") && combinedText.contains("all data"))
-
-            if (isFactoryResetScreen) {
-                val now = System.currentTimeMillis()
-                if (now - lastBlockTimestamp > DEBOUNCE_MILLIS) {
-                    lastBlockTimestamp = now
-                    performGlobalAction(GLOBAL_ACTION_BACK)
-                    mainHandler.post {
-                        Toast.makeText(
-                            applicationContext,
-                            "Focus Guard: প্যারেন্টাল কন্ট্রোল পলিসি অনুযায়ী ডিভাইস রিসেট বন্ধ রয়েছে।",
-                            Toast.LENGTH_LONG
-                        ).show()
-                    }
-                }
-                return
-            }
-        }
-
-        // 1.5. Intercept attempts to access Parental Controls when blocked by policy
+        // Intercept attempts to access Parental Controls when blocked by policy
         val isParentalControlBlocked = try {
             controller.isParentalControlAccessBlocked()
         } catch (_: Exception) { false }
