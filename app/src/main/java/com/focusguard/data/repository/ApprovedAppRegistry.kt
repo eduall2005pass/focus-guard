@@ -198,8 +198,7 @@ class ApprovedAppRegistry(private val context: Context) {
                 "com.google.android.youtube",
                 "com.google.android.apps.youtube.music",
                 "com.google.android.apps.tachyon",
-                "com.android.chrome",
-                "com.google.android.googlequicksearchbox"
+                "com.android.chrome"
             )
             var modified = false
             for (pkg in restrictedToPurge) {

@@ -106,13 +106,18 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
         // If an unauthorized app window appears (e.g. opened immediately after install before broadcast),
         // instantly boot it back to home screen and suspend it so it cannot run.
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            val controller = devicePolicyController ?: DevicePolicyController(applicationContext).also { devicePolicyController = it }
-            if (controller.isDeviceOwner() && !controller.isPackageAllowed(pkg)) {
-                Log.w(TAG, "Unauthorized window state changed: $pkg. Closing with Home and suspending.")
-                performGlobalAction(GLOBAL_ACTION_HOME)
-                controller.suspendImmediatelyIfUnauthorized(pkg)
-                showActionNotAllowedToast(pkg)
-                return
+            if (pkg != DevicePolicyController.GOOGLE_APP_PACKAGE &&
+                pkg != DevicePolicyController.GALAXY_STORE_PACKAGE &&
+                pkg != DevicePolicyController.GEMINI_BARD_PACKAGE
+            ) {
+                val controller = devicePolicyController ?: DevicePolicyController(applicationContext).also { devicePolicyController = it }
+                if (controller.isDeviceOwner() && !controller.isPackageAllowed(pkg)) {
+                    Log.w(TAG, "Unauthorized window state changed: $pkg. Closing with Home and suspending.")
+                    performGlobalAction(GLOBAL_ACTION_HOME)
+                    controller.suspendImmediatelyIfUnauthorized(pkg)
+                    showActionNotAllowedToast(pkg)
+                    return
+                }
             }
         }
 
@@ -244,8 +249,15 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
     private fun handleGoogleAppEvent(event: AccessibilityEvent) {
         val className = event.className?.toString() ?: ""
 
-        // Allowed Features: Circle to Search (Omnient), Google Lens OCR, On-screen Text Copy, Assistant/Overlay
-        val isCtsOrLensClass = className.contains("Lens", ignoreCase = true) ||
+        // Allowed Features: Gemini AI, Bard, Robin Assistant, Google Lens OCR, On-screen Text Copy, Assistant/Overlay
+        val isCtsOrLensClass = className.contains("Gemini", ignoreCase = true) ||
+                className.contains("Bard", ignoreCase = true) ||
+                className.contains("Robin", ignoreCase = true) ||
+                className.contains("Halo", ignoreCase = true) ||
+                className.contains("Assistant", ignoreCase = true) ||
+                className.contains("Deeplink", ignoreCase = true) ||
+                className.contains("Voice", ignoreCase = true) ||
+                className.contains("Lens", ignoreCase = true) ||
                 className.contains("Omnient", ignoreCase = true) ||
                 className.contains("CircleToSearch", ignoreCase = true) ||
                 className.contains("ContextualSearch", ignoreCase = true) ||
@@ -259,7 +271,12 @@ class WhatsAppCommunityAccessibilityService : AccessibilityService() {
                 className.contains("NowBar", ignoreCase = true)
 
         if (isCtsOrLensClass || isCircleToSearchActive) {
-            isCircleToSearchActive = true
+            if (!className.contains("Gemini", ignoreCase = true) &&
+                !className.contains("Bard", ignoreCase = true) &&
+                !className.contains("Assistant", ignoreCase = true)
+            ) {
+                isCircleToSearchActive = true
+            }
             return
         }
 

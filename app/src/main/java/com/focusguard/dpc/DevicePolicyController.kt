@@ -32,6 +32,8 @@ class DevicePolicyController(private val context: Context) {
         const val GALAXY_STORE_PACKAGE = "com.sec.android.app.samsungapps"
         const val KNOX_SERVICE_PLUGIN_PACKAGE = "com.samsung.android.knox.ksp"
         const val PARENTAL_CARE_PACKAGE = "com.samsung.android.app.parentalcare"
+        const val GOOGLE_APP_PACKAGE = "com.google.android.googlequicksearchbox"
+        const val GEMINI_BARD_PACKAGE = "com.google.android.apps.bard"
         const val PREFS_PARENTAL_CONTROL = "focusguard_parental_control_prefs"
         const val KEY_PARENTAL_CONTROL_BLOCKED = "key_parental_control_blocked"
         const val KEY_FACTORY_RESET_BLOCKED = "key_factory_reset_blocked"
@@ -183,8 +185,7 @@ class DevicePolicyController(private val context: Context) {
             "com.vivo.browser",
             "com.transsion.phoenix",
 
-            // Google Apps & Assistants
-            "com.google.android.googlequicksearchbox",
+            // Google Apps & Assistants (Note: com.google.android.googlequicksearchbox is isolated specifically to power Gemini)
             "com.google.android.apps.googleassistant",
             "com.google.android.apps.tachyon",
 
@@ -943,6 +944,21 @@ class DevicePolicyController(private val context: Context) {
                 continue
             }
 
+            // Special handling for Google App (com.google.android.googlequicksearchbox):
+            // Gemini (com.google.android.apps.bard) runs on top of Google App as its AI host.
+            // Google App MUST NOT be hidden or suspended, otherwise Gemini crashes/fails to open.
+            // Google Discover and Search entry points are strictly isolated via One UI settings,
+            // network DNS guard, and presentation interception.
+            if (pkgName == GOOGLE_APP_PACKAGE || pkgName == GEMINI_BARD_PACKAGE) {
+                try {
+                    dpm.setApplicationHidden(adminComponent, pkgName, false)
+                    dpm.setPackagesSuspended(adminComponent, arrayOf(pkgName), false)
+                    dpm.setUninstallBlocked(adminComponent, pkgName, false)
+                } catch (ignored: Exception) {
+                }
+                continue
+            }
+
             // If it is an explicitly restricted system app (Chrome, YouTube, etc.)
             if (RESTRICTED_SYSTEM_PACKAGES.contains(pkgName)) {
                 try {
@@ -1107,9 +1123,12 @@ class DevicePolicyController(private val context: Context) {
     fun disableGoogleDiscoverFeed() {
         try {
             android.provider.Settings.System.putInt(context.contentResolver, "page_minus_one_type", 0)
-            Log.i(TAG, "Enforced Samsung One UI: page_minus_one_type = 0 (Discover Feed Off)")
+            android.provider.Settings.Secure.putInt(context.contentResolver, "assistant_screen_type", 0)
+            android.provider.Settings.Secure.putInt(context.contentResolver, "assistant_screen_type_left_enable", 0)
+            android.provider.Settings.Secure.putInt(context.contentResolver, "touch_and_hold_to_search", 0)
+            Log.i(TAG, "Enforced Samsung One UI: page_minus_one_type = 0 (Discover Feed Off) and assistant screens off")
         } catch (e: Exception) {
-            Log.d(TAG, "Notice setting page_minus_one_type: ${e.message}")
+            Log.d(TAG, "Notice setting page_minus_one_type / assistant screens: ${e.message}")
         }
     }
 
@@ -1262,6 +1281,8 @@ class DevicePolicyController(private val context: Context) {
         if (packageName == context.packageName ||
             CRITICAL_SYSTEM_PACKAGES.contains(packageName) ||
             packageName == GALAXY_STORE_PACKAGE ||
+            packageName == GOOGLE_APP_PACKAGE ||
+            packageName == GEMINI_BARD_PACKAGE ||
             isCriticalOrProtectedPackage(packageName)
         ) {
             return true

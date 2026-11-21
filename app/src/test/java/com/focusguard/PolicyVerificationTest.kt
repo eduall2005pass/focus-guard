@@ -496,24 +496,26 @@ class PolicyVerificationTest {
 
     @Test
     fun verifyControlledGoogleAppPolicy() {
-        val restrictedSet = com.focusguard.dpc.DevicePolicyController.RESTRICTED_SYSTEM_PACKAGES
-
-        // 1. Google App package is restricted and hidden/suspended by DPC
-        assertTrue(restrictedSet.contains("com.google.android.googlequicksearchbox"))
+        // 1. Google App package is configured as controlled system host for Gemini AI
+        assertEquals("com.google.android.googlequicksearchbox", com.focusguard.dpc.DevicePolicyController.GOOGLE_APP_PACKAGE)
+        assertEquals("com.google.android.apps.bard", com.focusguard.dpc.DevicePolicyController.GEMINI_BARD_PACKAGE)
 
         // 2. General web search & search suggestions are blocked by navigation guard
         assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("google.com"))
         assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("www.google.com"))
         assertTrue(com.focusguard.study.filter.StudyNavigationGuard.isHostBlocked("suggestqueries.google.com"))
 
-        // 3. Circle to Search, Lens, and OCR terms are allowed, while Discover & Search Widget activities are blocked
-        val allowedFeatureNames = listOf("LensActivity", "OmnientActivity", "CircleToSearch", "TextSelectionActivity", "OpaOverlay")
+        // 3. Gemini, Circle to Search, Lens, and OCR terms are allowed, while Discover & Search Widget activities are blocked
+        val allowedFeatureNames = listOf("LensActivity", "OmnientActivity", "CircleToSearch", "TextSelectionActivity", "OpaOverlay", "GeminiGatewayActivity", "BardEntryPointActivity", "RobinEntryPointActivity")
         for (name in allowedFeatureNames) {
             val isAllowed = name.contains("Lens", ignoreCase = true) ||
                     name.contains("Omnient", ignoreCase = true) ||
                     name.contains("CircleToSearch", ignoreCase = true) ||
                     name.contains("TextSelection", ignoreCase = true) ||
-                    name.contains("OpaOverlay", ignoreCase = true)
+                    name.contains("OpaOverlay", ignoreCase = true) ||
+                    name.contains("Gemini", ignoreCase = true) ||
+                    name.contains("Bard", ignoreCase = true) ||
+                    name.contains("Robin", ignoreCase = true)
             assertTrue("Feature $name must be allowed", isAllowed)
         }
 
