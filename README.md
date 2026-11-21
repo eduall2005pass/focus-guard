@@ -15,7 +15,8 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
   - `PackageChangeReceiver` immediately evaluates newly installed packages and hides unapproved apps on arrival.
 - **Embedded WebViews Preserved**: Standalone browsers (Chrome, Firefox, etc.) are blocked, but `com.google.android.webview` is strictly preserved, ensuring that banking apps, payment gateways, and authentication flows remain functional.
 - **System Updates Preserved**: Google Play Store (`com.android.vending`) and OS system updates remain enabled so approved apps and Android security patches stay up-to-date.
-- **Hardware-Level Protection**: Sideloading is blocked via `DISALLOW_INSTALL_UNKNOWN_SOURCES`, VPN bypass is blocked via `DISALLOW_CONFIG_VPN`, Safe Mode is disabled via `DISALLOW_SAFE_BOOT`, and Focus Guard uninstallation is locked via `setUninstallBlocked`.
+- **Device Owner App Tamper Protection**: `DISALLOW_APPS_CONTROL` blocks Settings/launcher actions to clear app data or cache, disable, force-stop, or uninstall apps; `setUninstallBlocked` specifically protects Focus Guard from uninstall. This Settings restriction applies to apps across the device, and does not prevent a factory reset.
+- **Hardware-Level Protection**: Sideloading is blocked via `DISALLOW_INSTALL_UNKNOWN_SOURCES`, VPN bypass is blocked via `DISALLOW_CONFIG_VPN`, and Safe Mode is disabled via `DISALLOW_SAFE_BOOT`.
 - **System-Wide Private DNS**: Enforces DNS-over-TLS using `high.kahfguard.com` (Kahf Guard High Protection) and locks DNS settings using `DISALLOW_CONFIG_PRIVATE_DNS`.
 - **WhatsApp Communities Guard**: Uses a scoped, low-overhead `AccessibilityService` (active solely within `com.whatsapp`) to detect and exit the Communities section while preserving normal WhatsApp chats, calls, and media.
 
@@ -82,8 +83,43 @@ This is **not** a habit tracker, productivity dashboard, accountability applicat
 ### 2. Blocked Applications
 
 - **General-Purpose Browsers**: Google Chrome, Mozilla Firefox, Samsung Internet, Opera, Brave, Microsoft Edge, DuckDuckGo, Mi Browser, ColorOS Browser, Vivo Browser, Phoenix, UC Browser, Tor Browser.
-- **Telegram**: Regular Telegram (`org.telegram.messenger`), Telegram Web, Telegram X, NekoX. *(A dedicated personal cloud file browser may be allowed separately in the future).*
+- **Telegram Applications**: Regular standalone Telegram (`org.telegram.messenger`), Telegram Web, Telegram X, and NekoX remain strictly blocked at the OS framework level. Selected educational study channels and groups are accessed exclusively within Focus Guard's embedded **Telegram Study Mode** (using an integrated, restricted Telegram Web K engine).
 - **Social Media & Distractions**: YouTube, YouTube Music, YouTube Kids, Facebook, Facebook Lite, Messenger, Instagram, TikTok, Twitter/X, Snapchat, Reddit, Pinterest, Netflix.
+
+---
+
+## Study Portal & Restricted Telegram Web K Integration
+
+Focus Guard features an embedded, distraction-free **Study Portal** enabling verified access to approved medical education resources and Telegram channels without exposing general-purpose browsing or the unrestricted Telegram client.
+
+### 1. Controlled WebView Architecture
+- **Sandboxed Execution**: Educational websites open within a controlled WebView. No external browsers or intent fallbacks are exposed.
+- **Focus-Control Filtering Engine**: Reuses the production Focus-Control whitelist (`_is_nav_permitted`) and real-time input filter (`BLOCKED_INPUT_WORDS`, Unicode normalization, leetspeak defeat, and zero-width filtering) ported directly from `focus-control`.
+- **Approved Websites Registry**: Managed via `approved_study_websites.json`:
+  - **Guess The Case (GTC)**: `https://guessthecase.eu.org/`
+  - **Booimate**: `https://booimate.com/`
+  - **NotebookLM**: `https://notebooklm.google.com/`
+  - **Medical Contents**: `https://medical-contents.abdursakib.workers.dev/0:/`
+  - **Muslim Bangla**: `https://muslimbangla.com/`
+  - **iHadis**: `https://ihadis.com/en`
+  - **LiveMCQ**: `https://web.livemcq.com/`
+  *(Expandable with administrator authorization)*
+
+### 2. Restricted Telegram Study Mode (Official Web K Engine)
+- **Maintained Source Fork**: Includes a modified Telegram Web K source fork in `third_party/telegram-web-k/`, pinned to its upstream revision and distributed with its GPL-3.0 license and source. The app bundles this locally built frontend; it does not load Telegram's hosted Web K page. Rebuild it with `scripts/build-focus-study-webk.sh` (Node.js 22.18+ and Corepack).
+- **Client Peer Gate**: Checks Telegram's resolved peer ID and peer type at Web K's conversation entry points. The native approved `type:id` registry permits channels, supergroups, and groups; user chats and bots are denied. Unknown communities request native device-credential approval before their conversation opens.
+- **One-Time Authentication**: Initial login is performed inside the controlled WebView. Session credentials (`localStorage`, `IndexedDB`) persist across device reboots and app updates.
+- **Kiosk Mode Enforcement**:
+  - Left column (chat list, folder tabs, search bar, hamburger menu) is completely suppressed.
+  - Social feeds, stories, global discovery, voice/video calls, and bot stores are blocked.
+  - Center viewport expands to 100% of the display for maximum focus.
+  - The WebView's persistent appassets origin keeps the Web K session local to Focus Guard. Telegram login and chat content still require internet access.
+
+### 3. GTC Channel Interception & Admin Approval Flow
+- Selecting a Telegram link (`t.me/...`, `tg://...`) from Guess The Case or study portals triggers automatic native interception.
+- Focus Guard verifies the destination against the **Permanent Approved Telegram Registry** (`approved_telegram_registry.json`).
+- If approved, it opens immediately in Telegram Study Mode.
+- If unapproved, Web K resolves its real peer metadata, but the peer gate prevents the chat from opening and presents an **Admin Approval Prompt**. Only an approved channel, group, or supergroup is added to the registry and allowed to open.
 
 ---
 

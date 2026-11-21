@@ -368,6 +368,7 @@ fun SecurityThreeDotMenu(
 
     if (showSecurityOptionsDialog) {
         var isParentalBlocked by remember { mutableStateOf(actualDpcController.isParentalControlAccessBlocked()) }
+        var isResetBlocked by remember { mutableStateOf(actualDpcController.isFactoryResetBlocked()) }
 
         AlertDialog(
             onDismissRequest = { showSecurityOptionsDialog = false },
@@ -442,7 +443,49 @@ fun SecurityThreeDotMenu(
                         }
                     }
 
-                    // 2. Focus Guard Security PIN Change (Not Parental Control PIN)
+                    // 2. Settings Factory Reset Access Toggle (Direct DPC Policy)
+                    OutlinedButton(
+                        onClick = {
+                            val newTarget = !isResetBlocked
+                            val success = actualDpcController.setFactoryResetBlocked(newTarget)
+                            if (success) {
+                                isResetBlocked = newTarget
+                                val msg = if (newTarget) {
+                                    "ফ্যাক্টরি রিসেট ব্লক করা হয়েছে (Action Not Allowed)।"
+                                } else {
+                                    "ফ্যাক্টরি রিসেট সচল করা হয়েছে (Allowed)।"
+                                }
+                                Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "ডিভাইস ওনার অনুমতি প্রয়োজন।", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (isResetBlocked) Color(0xFFFFB74D) else GuardGreenText
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(
+                            if (isResetBlocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(horizontalAlignment = Alignment.Start) {
+                            Text(
+                                if (isResetBlocked) "ফ্যাক্টরি রিসেট আনব্লক করুন (Allow Reset)" else "ফ্যাক্টরি রিসেট ব্লক করুন (Block Reset)",
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                if (isResetBlocked) "স্ট্যাটাস: ব্লকড (Action Not Allowed) 🔒" else "স্ট্যাটাস: সচল (Allowed) 🔓",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (isResetBlocked) Color(0xFFFFB74D) else GuardGreenText
+                            )
+                        }
+                    }
+
+                    // 3. Focus Guard Security PIN Change (Not Parental Control PIN)
                     OutlinedButton(
                         onClick = {
                             showSecurityOptionsDialog = false

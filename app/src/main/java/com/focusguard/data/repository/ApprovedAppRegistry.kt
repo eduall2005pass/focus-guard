@@ -26,29 +26,19 @@ class ApprovedAppRegistry(private val context: Context) {
 
     companion object {
         private const val TAG = "FocusGuard_Registry"
-    }
 
-    /**
-     * Initializes the approved application registry with pre-approved packages
-     * if the registry does not already exist.
-     */
-    fun initializeRegistryIfNotExists(): Int {
-        if (registryFile.exists()) {
-            val count = loadRegistry().size
-            Log.i(TAG, "Approved app registry already exists with $count packages.")
-            return count
-        }
-
-        val predefinedEntries = listOf(
+        fun getPredefinedEntries(): List<ApprovedAppEntry> = listOf(
             // Communication
             ApprovedAppEntry("com.whatsapp", "WhatsApp", AppCategory.COMMUNICATION, isPredefined = true, note = "Communities guarded"),
             ApprovedAppEntry("com.whatsapp.w4b", "WhatsApp Business", AppCategory.COMMUNICATION, isPredefined = true, note = "Communities guarded"),
             ApprovedAppEntry("com.brilliant.connect.com.bd", "Brilliant Connect", AppCategory.COMMUNICATION, isPredefined = true, note = "IP Telephony & Communication"),
 
             // Banking & Payments
+            ApprovedAppEntry("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS, isPredefined = true),
+            ApprovedAppEntry("com.ionicframework.icellular894076", "IBBL iSmart", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("com.ibbl.ibbl_ismart", "iSmart (IBBL)", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("com.ibbl.ismart", "iSmart", AppCategory.BANKING_PAYMENTS, isPredefined = true),
-            ApprovedAppEntry("com.ibbl.cellfin", "Cellfin", AppCategory.BANKING_PAYMENTS, isPredefined = true),
+            ApprovedAppEntry("com.ibbl.mcash", "mCash (IBBL)", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("com.bKash.customerapp", "bKash", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("com.konasl.nagad", "Nagad", AppCategory.BANKING_PAYMENTS, isPredefined = true),
             ApprovedAppEntry("com.dbbl.mbs.apps.main", "Rocket", AppCategory.BANKING_PAYMENTS, isPredefined = true),
@@ -56,8 +46,11 @@ class ApprovedAppRegistry(private val context: Context) {
 
             // Transportation, Delivery & Rides
             ApprovedAppEntry("com.google.android.apps.maps", "Google Maps", AppCategory.TRANSPORTATION, isPredefined = true),
-            ApprovedAppEntry("bd.gov.dmtcl.rapidpass", "Rapid Pass", AppCategory.TRANSPORTATION, isPredefined = true),
+            ApprovedAppEntry("com.bd.rapidpass.app", "Rapid Pass", AppCategory.TRANSPORTATION, isPredefined = true),
+            ApprovedAppEntry("bd.gov.dmtcl.rapidpass", "Rapid Pass (DMTCL)", AppCategory.TRANSPORTATION, isPredefined = true),
             ApprovedAppEntry("bd.gov.rapidpass", "Rapid Pass Portal", AppCategory.TRANSPORTATION, isPredefined = true),
+            ApprovedAppEntry("com.shohoz.dtrainpwa", "Rail Sheba", AppCategory.TRANSPORTATION, isPredefined = true, note = "Bangladesh Railway Official E-Ticket"),
+            ApprovedAppEntry("com.shohoz.rail", "Bangladesh Railway", AppCategory.TRANSPORTATION, isPredefined = true, note = "Bangladesh Railway Official App"),
             ApprovedAppEntry("com.pathao.user", "Pathao", AppCategory.TRANSPORTATION, isPredefined = true, note = "Ride, Food & Delivery"),
             ApprovedAppEntry("com.ubercab", "Uber", AppCategory.TRANSPORTATION, isPredefined = true, note = "Rides & Transit"),
             ApprovedAppEntry("com.global.foodpanda.android", "Foodpanda", AppCategory.TRANSPORTATION, isPredefined = true, note = "Food & Grocery Delivery"),
@@ -70,7 +63,11 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.openai.chatgpt", "ChatGPT", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.anthropic.claude", "Claude", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.bard", "Gemini", AppCategory.AI_STUDY, isPredefined = true),
-            ApprovedAppEntry("com.google.android.apps.notebooklm", "NotebookLM", AppCategory.AI_STUDY, isPredefined = true),
+            ApprovedAppEntry("com.google.android.apps.labs.language.tailwind", "NotebookLM", AppCategory.AI_STUDY, isPredefined = true),
+            ApprovedAppEntry("com.google.android.apps.notebooklm", "NotebookLM (Alt)", AppCategory.AI_STUDY, isPredefined = true),
+            ApprovedAppEntry("com.livemcq.livemcq", "Live MCQ", AppCategory.AI_STUDY, isPredefined = true, note = "Competitive exam preparation"),
+            ApprovedAppEntry("com.google.android.keep", "Google Keep Notes", AppCategory.AI_STUDY, isPredefined = true),
+            ApprovedAppEntry("com.github.android", "GitHub", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.pdfviewer", "Google PDF Viewer", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.adobe.reader", "Adobe Acrobat", AppCategory.AI_STUDY, isPredefined = true),
             ApprovedAppEntry("com.samsung.android.app.notes", "Samsung Notes", AppCategory.AI_STUDY, isPredefined = true),
@@ -83,13 +80,23 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("com.elsevier.threeD4Medical.CompleteAnatomy", "Complete Anatomy (Alt)", AppCategory.AI_STUDY, isPredefined = true, note = "3D Anatomy by Elsevier"),
 
             // Google Productivity
+            ApprovedAppEntry("com.google.android.apps.translate", "Google Translate", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
+            ApprovedAppEntry("com.google.android.apps.authenticator2", "Google Authenticator", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.gm", "Gmail", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true, note = "Email & Communication"),
             ApprovedAppEntry("com.google.android.apps.docs", "Google Drive", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.docs.editors.docs", "Google Docs", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.docs.editors.sheets", "Google Sheets", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
             ApprovedAppEntry("com.google.android.apps.photos", "Google Photos", AppCategory.GOOGLE_PRODUCTIVITY, isPredefined = true),
 
+            // Keyboards
+            ApprovedAppEntry("ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, note = "Bangla Keyboard"),
+            ApprovedAppEntry("net.ridmik.keyboard", "Ridmik Keyboard", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, note = "Bangla Keyboard"),
+
             // Essential System Applications
+            ApprovedAppEntry("ru.zdevs.zarchiver", "ZArchiver", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, note = "Archive manager"),
+            ApprovedAppEntry("com.google.android.apps.credentialmanager", "Google Password Manager", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.android.credentialmanager", "Credential Manager", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.google.android.apps.adm", "Find Hub", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.google.android.webview", "Android System WebView", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.google.android.gms", "Google Play Services", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.google.android.gsf", "Google Services Framework", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
@@ -119,17 +126,33 @@ class ApprovedAppRegistry(private val context: Context) {
             ApprovedAppEntry("bd.gov.teletalk.myteletalk", "My Teletalk (Gov)", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true),
             ApprovedAppEntry("com.samsung.android.samsungpass", "Samsung Pass", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true, note = "Biometric credentials & passkeys"),
             ApprovedAppEntry("com.samsung.android.samsungpassautofill", "Samsung Pass Autofill", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.samsung.android.authfw", "Samsung Authentication Framework", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.samsung.android.biometrics.app.setting", "Samsung Biometrics & Passkeys", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.samsung.android.spay", "Samsung Wallet / Pass", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.samsung.android.spaymini", "Samsung Pay Mini", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.samsung.android.mobileservice", "Samsung Experience Service", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
+            ApprovedAppEntry("com.osp.app.signin", "Samsung Account", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.sec.android.app.samsungapps.una2", "Samsung Update Agent", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.wssyncmldm", "Samsung FOTA Update", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.sec.android.soagent", "Samsung OS Update Agent", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.samsung.android.app.omcagent", "Samsung Carrier Agent", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
             ApprovedAppEntry("com.google.android.modulemetadata", "Google Play System Updates", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
-            ApprovedAppEntry("com.focusguard", "Focus Guard DPC", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true),
-            ApprovedAppEntry("com.google.android.googlequicksearchbox", "Google App Framework", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true, note = "Circle to Search & text copy active")
+            ApprovedAppEntry("com.focusguard", "Focus Guard DPC", AppCategory.ESSENTIAL_SYSTEM, isPredefined = true, isEssential = true)
         )
+    }
 
+    /**
+     * Initializes the approved application registry with pre-approved packages
+     * if the registry does not already exist.
+     */
+    fun initializeRegistryIfNotExists(): Int {
+        if (registryFile.exists()) {
+            val count = loadRegistry().size
+            Log.i(TAG, "Approved app registry already exists with $count packages.")
+            return count
+        }
+
+        val predefinedEntries = getPredefinedEntries()
         saveRegistry(predefinedEntries)
         Log.i(TAG, "Initialized Approved App Registry with ${predefinedEntries.size} packages.")
         return predefinedEntries.size
@@ -168,6 +191,34 @@ class ApprovedAppRegistry(private val context: Context) {
                     note = if (obj.isNull("note")) null else obj.getString("note")
                 )
                 result[entry.packageName] = entry
+            }
+
+            // Ensure restricted packages (YouTube, Chrome, etc.) are purged from registry
+            val restrictedToPurge = setOf(
+                "com.google.android.youtube",
+                "com.google.android.apps.youtube.music",
+                "com.google.android.apps.tachyon",
+                "com.android.chrome",
+                "com.google.android.googlequicksearchbox"
+            )
+            var modified = false
+            for (pkg in restrictedToPurge) {
+                if (result.remove(pkg) != null) {
+                    modified = true
+                }
+            }
+
+            // Ensure all predefined entries exist in registry
+            for (pre in getPredefinedEntries()) {
+                if (!result.containsKey(pre.packageName)) {
+                    result[pre.packageName] = pre
+                    modified = true
+                }
+            }
+
+            if (modified) {
+                saveRegistry(result.values.toList())
+                Log.i(TAG, "Synchronized approved registry with predefined entries.")
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed reading approved app registry", e)

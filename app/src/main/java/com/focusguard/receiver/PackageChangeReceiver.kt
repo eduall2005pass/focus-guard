@@ -3,7 +3,10 @@ package com.focusguard.receiver
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import com.focusguard.data.repository.AllowlistRepository
 import com.focusguard.dpc.DevicePolicyController
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +25,26 @@ class PackageChangeReceiver : BroadcastReceiver() {
 
             val controller = DevicePolicyController(context)
             if (!controller.isDeviceOwner()) return
+
+            // 1. FAST SYNCHRONOUS SUSPENSION (< 2ms)
+            // Immediately suspend unauthorized packages before any background coroutine or DataStore read
+            val suspended = controller.suspendImmediatelyIfUnauthorized(packageName)
+            if (suspended) {
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        val appLabel = try {
+                            val appInfo = context.packageManager.getApplicationInfo(packageName, 0)
+                            context.packageManager.getApplicationLabel(appInfo).toString()
+                        } catch (_: Exception) { packageName }
+
+                        Toast.makeText(
+                            context,
+                            "⚠️ Focus Guard: '$appLabel' অনুমোদিত নয় এবং লক করা হয়েছে। আপনি চাইলে এটি আনইনস্টল করে দিতে পারেন।",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    } catch (_: Exception) {}
+                }
+            }
 
             val repository = AllowlistRepository(context)
             val pendingResult = goAsync()

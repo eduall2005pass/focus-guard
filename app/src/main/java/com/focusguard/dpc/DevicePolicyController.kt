@@ -8,6 +8,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.UserManager
+import android.provider.Settings
 import android.util.Log
 import android.view.inputmethod.InputMethodManager
 import com.focusguard.data.model.DeviceOwnerStatus
@@ -31,8 +32,10 @@ class DevicePolicyController(private val context: Context) {
         const val GALAXY_STORE_PACKAGE = "com.sec.android.app.samsungapps"
         const val KNOX_SERVICE_PLUGIN_PACKAGE = "com.samsung.android.knox.ksp"
         const val PARENTAL_CARE_PACKAGE = "com.samsung.android.app.parentalcare"
-        private const val PREFS_PARENTAL_CONTROL = "focusguard_parental_control_prefs"
-        private const val KEY_PARENTAL_CONTROL_BLOCKED = "key_parental_control_blocked"
+        const val PREFS_PARENTAL_CONTROL = "focusguard_parental_control_prefs"
+        const val KEY_PARENTAL_CONTROL_BLOCKED = "key_parental_control_blocked"
+        const val KEY_FACTORY_RESET_BLOCKED = "key_factory_reset_blocked"
+        const val KEY_ADB_DEBUGGING_BLOCKED = "key_adb_debugging_blocked"
 
         // Protected set: packages that MUST NEVER be hidden under any condition
         val CRITICAL_SYSTEM_PACKAGES = setOf(
@@ -302,6 +305,61 @@ class DevicePolicyController(private val context: Context) {
     }
 
     /**
+     * Checks if Factory Reset is blocked via DPC restriction.
+     * When blocked, Android Settings displays native "Action not allowed by your admin".
+     */
+    fun isFactoryResetBlocked(): Boolean {
+        return parentalControlPrefs.getBoolean(KEY_FACTORY_RESET_BLOCKED, false)
+    }
+
+    /**
+     * Toggles Factory Reset restriction directly via DevicePolicyManager.
+     * Does not use accessibility service; enforces UserManager.DISALLOW_FACTORY_RESET natively.
+     */
+    fun setFactoryResetBlocked(blocked: Boolean): Boolean {
+        parentalControlPrefs.edit().putBoolean(KEY_FACTORY_RESET_BLOCKED, blocked).apply()
+        if (!isDeviceOwner()) return false
+        return try {
+            if (blocked) {
+                dpm.addUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            } else {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating factory reset restriction", e)
+            false
+        }
+    }
+
+    /**
+     * Checks if ADB USB debugging is blocked via DPC restriction.
+     */
+    fun isAdbDebuggingBlocked(): Boolean {
+        return parentalControlPrefs.getBoolean(KEY_ADB_DEBUGGING_BLOCKED, false)
+    }
+
+    /**
+     * Toggles ADB USB debugging restriction directly via DevicePolicyManager.
+     * By default false so debugging/testing on device is not interrupted.
+     */
+    fun setAdbDebuggingBlocked(blocked: Boolean): Boolean {
+        parentalControlPrefs.edit().putBoolean(KEY_ADB_DEBUGGING_BLOCKED, blocked).apply()
+        if (!isDeviceOwner()) return false
+        return try {
+            if (blocked) {
+                dpm.addUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
+            } else {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating ADB debugging restriction", e)
+            false
+        }
+    }
+
+    /**
      * Checks if the device was booted into Safe Mode.
      * If Safe Mode is detected, automatically forces an immediate reboot back to normal mode.
      */
@@ -353,6 +411,7 @@ class DevicePolicyController(private val context: Context) {
             dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES)
             dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_APPS_CONTROL)
             dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_UNINSTALL_APPS)
+            dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
             true
         } catch (e: Exception) {
             Log.e(TAG, "Failed to clear install restrictions: ${e.message}", e)
@@ -458,8 +517,19 @@ class DevicePolicyController(private val context: Context) {
                     privateDnsHost = dpm.getGlobalPrivateDnsHost(adminComponent)
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to read Private DNS mode", e)
+                Log.w(TAG, "Failed to read Private DNS mode via DPM", e)
             }
+
+            try {
+                val sysHost = Settings.Global.getString(context.contentResolver, "private_dns_specifier")
+                val sysMode = Settings.Global.getString(context.contentResolver, "private_dns_mode")
+                if (privateDnsHost.isNullOrBlank() && !sysHost.isNullOrBlank()) {
+                    privateDnsHost = sysHost
+                }
+                if (privateDnsMode == 0 && sysMode == "hostname") {
+                    privateDnsMode = 3
+                }
+            } catch (_: Exception) {}
 
             try {
                 val bundle = dpm.getUserRestrictions(adminComponent)
@@ -619,6 +689,65 @@ class DevicePolicyController(private val context: Context) {
     }
 
     /**
+     * Enforces Private DNS (DoT) to high.kahfguard.com and locks the setting.
+     * 1. Temporarily clears DISALLOW_CONFIG_PRIVATE_DNS so modifications are accepted by the OS.
+     * 2. Sets hostname & specifier via ContentResolver Settings.Global and DPM global settings.
+     * 3. On Android 10+ (Q), calls dpm.setGlobalPrivateDnsModeSpecifiedHost.
+     * 4. Re-applies DISALLOW_CONFIG_PRIVATE_DNS restriction to lock Private DNS.
+     */
+    fun enforcePrivateDns(): String {
+        if (!isDeviceOwner()) return "Requires Device Owner"
+
+        // 1. Temporarily clear restriction so modification is permitted
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_CONFIG_PRIVATE_DNS)
+            } catch (_: Exception) {}
+        }
+
+        // 2. Set via DPM Global Settings
+        try {
+            dpm.setGlobalSetting(adminComponent, "private_dns_mode", "hostname")
+            dpm.setGlobalSetting(adminComponent, "private_dns_specifier", KAHF_GUARD_DNS_HOST)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed setGlobalSetting for Private DNS: ${e.message}")
+        }
+
+        // 3. Set via ContentResolver Settings.Global
+        try {
+            Settings.Global.putString(context.contentResolver, "private_dns_mode", "hostname")
+            Settings.Global.putString(context.contentResolver, "private_dns_specifier", KAHF_GUARD_DNS_HOST)
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed Settings.Global.putString for Private DNS: ${e.message}")
+        }
+
+        // 4. Set via official DevicePolicyManager API (Android 10+)
+        var status = "Enforced via Global Settings ($KAHF_GUARD_DNS_HOST)"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            try {
+                val dnsResult = dpm.setGlobalPrivateDnsModeSpecifiedHost(adminComponent, KAHF_GUARD_DNS_HOST)
+                status = when (dnsResult) {
+                    DevicePolicyManager.PRIVATE_DNS_SET_NO_ERROR -> "Enforced ($KAHF_GUARD_DNS_HOST)"
+                    DevicePolicyManager.PRIVATE_DNS_SET_ERROR_HOST_NOT_SERVING -> "Warning: Host not serving TLS on 853 ($KAHF_GUARD_DNS_HOST) - Enforced via Global Settings"
+                    DevicePolicyManager.PRIVATE_DNS_SET_ERROR_FAILURE_SETTING -> "Error: Failure applying Private DNS setting - Enforced via Global Settings"
+                    else -> "Status code: $dnsResult (Enforced via Global Settings)"
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed setGlobalPrivateDnsModeSpecifiedHost: ${e.message}")
+            }
+
+            // 5. Re-lock Private DNS configuration
+            try {
+                dpm.addUserRestriction(adminComponent, UserManager.DISALLOW_CONFIG_PRIVATE_DNS)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to lock private DNS restriction: ${e.message}")
+            }
+        }
+
+        return status
+    }
+
+    /**
      * Enforces the complete Focus Guard policy suite.
      * Must be run when DO is active.
      */
@@ -682,10 +811,14 @@ class DevicePolicyController(private val context: Context) {
             UserManager.DISALLOW_CONFIG_DATE_TIME
         )
 
-        // Clear DISALLOW_FACTORY_RESET: Focus Guard has zero relation with factory reset
-        try {
-            dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
-        } catch (_: Exception) {}
+        // Enforce DISALLOW_FACTORY_RESET if factory reset is blocked via DPC
+        if (isFactoryResetBlocked()) {
+            standardRestrictions.add(UserManager.DISALLOW_FACTORY_RESET)
+        } else {
+            try {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            } catch (_: Exception) {}
+        }
 
         // Enforce DISALLOW_INSTALL_APPS when blockNewAppInstalls is enabled
         if (blockNewAppInstalls) {
@@ -709,13 +842,14 @@ class DevicePolicyController(private val context: Context) {
             dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_UNINSTALL_APPS)
         } catch (_: Exception) {}
 
-        // Keep ADB enabled during testing/development
-        try {
-            dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
-        } catch (_: Exception) {}
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            standardRestrictions.add(UserManager.DISALLOW_CONFIG_PRIVATE_DNS)
+        // Enforce DISALLOW_DEBUGGING_FEATURES only when ADB debugging block is explicitly enabled
+        // Default is false so developer/user can continue debugging/testing on device safely!
+        if (isAdbDebuggingBlocked()) {
+            standardRestrictions.add(UserManager.DISALLOW_DEBUGGING_FEATURES)
+        } else {
+            try {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_DEBUGGING_FEATURES)
+            } catch (_: Exception) {}
         }
 
         for (restriction in standardRestrictions) {
@@ -727,21 +861,10 @@ class DevicePolicyController(private val context: Context) {
             }
         }
 
-        // 6. Configure Private DNS to high.kahfguard.com (DNS-over-TLS)
-        var dnsStatus = "Unsupported on this Android version"
+        // 6. Configure Private DNS to high.kahfguard.com (DNS-over-TLS) and lock configuration
+        val dnsStatus = enforcePrivateDns()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            try {
-                val dnsResult = dpm.setGlobalPrivateDnsModeSpecifiedHost(adminComponent, KAHF_GUARD_DNS_HOST)
-                dnsStatus = when (dnsResult) {
-                    DevicePolicyManager.PRIVATE_DNS_SET_NO_ERROR -> "Enforced ($KAHF_GUARD_DNS_HOST)"
-                    DevicePolicyManager.PRIVATE_DNS_SET_ERROR_HOST_NOT_SERVING -> "Warning: Host not serving TLS on 853 ($KAHF_GUARD_DNS_HOST)"
-                    DevicePolicyManager.PRIVATE_DNS_SET_ERROR_FAILURE_SETTING -> "Error: Failure applying Private DNS setting"
-                    else -> "Status code: $dnsResult"
-                }
-            } catch (e: Exception) {
-                dnsStatus = "Failed: ${e.message}"
-                errors.add("Private DNS error: ${e.message}")
-            }
+            appliedRestrictions.add(UserManager.DISALLOW_CONFIG_PRIVATE_DNS)
         }
 
         // 6.5. Controlled Google App Policy (Discover Feed Off, Search Widget Off, Circle to Search & Lens Allowed)

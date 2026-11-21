@@ -1,0 +1,41 @@
+html.focus-guard-study-mode,
+html.focus-guard-study-mode body,
+html.focus-guard-study-mode #root,
+html.focus-guard-study-mode #page-chats,
+html.focus-guard-study-mode #main-columns,
+html.focus-guard-study-mode #column-center {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+html.focus-guard-study-mode #column-left,
+html.focus-guard-study-mode #column-right,
+html.focus-guard-study-mode .sidebar-left,
+html.focus-guard-study-mode .sidebar-right,
+html.focus-guard-study-mode .LeftColumn,
+html.focus-guard-study-mode .RightColumn,
+html.focus-guard-study-mode .chatlist-container,
+html.focus-guard-study-mode .stories-list,
+html.focus-guard-study-mode .stories-viewer,
+html.focus-guard-study-mode .topbar-search,
+html.focus-guard-study-mode .global-search,
+html.focus-guard-study-mode .search-container,
+html.focus-guard-study-mode .settings-container,
+html.focus-guard-study-mode .contacts-container,
+html.focus-guard-study-mode .chat-input,
+html.focus-guard-study-mode .chat-input-container,
+html.focus-guard-study-mode .chat-input-wrapper,
+html.focus-guard-study-mode .btn-call,
+html.focus-guard-study-mode .btn-videocall,
+html.focus-guard-study-mode [data-testid='chat-input'],
+html.focus-guard-study-mode [data-testid='left-column'],
+html.focus-guard-study-mode [data-testid='right-column'] {
+  display: none !important;
+}
+
+html.focus-guard-study-mode #column-center {
+  position: absolute !important;
+  inset: 0 !important;
+}

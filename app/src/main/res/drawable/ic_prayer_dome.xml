@@ -1,0 +1,19 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="28dp"
+    android:height="24dp"
+    android:viewportWidth="28"
+    android:viewportHeight="24">
+    <!-- Miniature dome with spire -->
+    <path
+        android:fillColor="#2D6A4F"
+        android:pathData="M6,22 L22,22 L22,17 C22,13 19,9 15.5,6.5 C14.5,5.5 14.2,4 14.1,2 L13.9,2 C13.8,4 13.5,5.5 12.5,6.5 C9,9 6,13 6,17 Z" />
+    <path
+        android:strokeColor="#52B788"
+        android:strokeWidth="0.8"
+        android:strokeLineCap="round"
+        android:pathData="M14,2 L14,0.5" />
+    <!-- Bottom base bar -->
+    <path
+        android:fillColor="#1B4332"
+        android:pathData="M4,22 L24,22 L24,24 L4,24 Z" />
+</vector>

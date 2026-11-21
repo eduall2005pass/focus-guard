@@ -228,7 +228,8 @@ class PolicyVerificationTest {
         )
         assertTrue("Must disallow unknown sources", enforcedRestrictions.contains("no_install_unknown_sources"))
         assertTrue("Must disallow new installations", enforcedRestrictions.contains("no_install_apps"))
-        assertFalse("Must NOT disallow factory reset; Focus Guard has zero relation with factory reset", enforcedRestrictions.contains("no_factory_reset"))
+        assertFalse("Must NOT disallow factory reset by default; toggled via 3-dot security menu", enforcedRestrictions.contains("no_factory_reset"))
+        assertFalse("Must NOT disallow ADB debugging by default to allow testing/debugging on device", enforcedRestrictions.contains("no_debugging_features"))
         assertFalse("Must NOT disallow uninstallation system-wide so unwanted apps can be removed", enforcedRestrictions.contains("no_uninstall_apps"))
     }
 

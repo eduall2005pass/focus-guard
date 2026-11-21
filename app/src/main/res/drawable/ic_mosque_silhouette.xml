@@ -1,0 +1,47 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="90dp"
+    android:viewportWidth="200"
+    android:viewportHeight="90">
+    <!-- Subtle Mosque Skyline -->
+    <!-- Left Minarets -->
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.12"
+        android:pathData="M15,90 L17,45 L15,45 L15,40 L18,33 L18,25 L18.5,18 L19,25 L19,33 L22,40 L22,45 L20,45 L22,90 Z" />
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.10"
+        android:pathData="M35,90 L37,55 L35,55 L35,50 L38,45 L38,38 L38.5,30 L39,38 L39,45 L42,50 L42,55 L40,55 L42,90 Z" />
+    
+    <!-- Central Grand Dome -->
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.13"
+        android:pathData="M110,90 L75,90 L75,65 C75,52 88,40 100,32 C103,30 105,25 106,20 L107,20 C108,25 110,30 113,32 C125,40 138,52 138,65 L138,90 Z" />
+    <!-- Crescent finial on central dome -->
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.15"
+        android:pathData="M106.5,15 C104,15 102.5,13.5 102.5,11 C102.5,8.5 104,7 106.5,7 C105,7.8 104.2,9.2 104.2,11 C104.2,12.8 105,14.2 106.5,15 Z" />
+
+    <!-- Secondary Flanking Domes -->
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.09"
+        android:pathData="M60,90 L52,90 L52,70 C52,60 62,52 70,47 C72,45 74,40 75,37 L75.5,37 C76.5,40 78,45 80,47 C85,50 88,58 88,70 L88,90 Z" />
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.09"
+        android:pathData="M125,90 L125,70 C125,58 128,50 133,47 C135,45 136.5,40 137.5,37 L138,37 C139,40 141,45 143,47 C151,52 161,60 161,70 L161,90 Z" />
+
+    <!-- Right Minarets -->
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.14"
+        android:pathData="M165,90 L167,42 L165,42 L165,37 L168,30 L168,22 L168.5,15 L169,22 L169,30 L172,37 L172,42 L170,42 L172,90 Z" />
+    <path
+        android:fillColor="#133E2B"
+        android:fillAlpha="0.11"
+        android:pathData="M185,90 L186.5,50 L185,50 L185,46 L187.5,40 L187.5,33 L188,27 L188.5,33 L188.5,40 L191,46 L191,50 L189.5,50 L191,90 Z" />
+</vector>

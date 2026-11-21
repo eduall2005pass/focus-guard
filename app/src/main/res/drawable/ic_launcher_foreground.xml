@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Shield Ambient Glow Shadow -->
+    <path
+        android:fillColor="#10B981"
+        android:fillAlpha="0.25"
+        android:pathData="M54,21 C65,21 77,25 81,30 C81,49 76,68 54,85 C32,68 27,49 27,30 C31,25 43,21 54,21 Z" />
+
+    <!-- Main Shield Body -->
+    <path
+        android:fillColor="#072C1F"
+        android:pathData="M54,23 C64,23 75,27 79,31 C79,48 74,66 54,83 C34,66 29,48 29,31 C33,27 44,23 54,23 Z" />
+
+    <!-- Right Facet Shadow -->
+    <path
+        android:fillColor="#041E15"
+        android:fillAlpha="0.65"
+        android:pathData="M54,23 C64,23 75,27 79,31 C79,48 74,66 54,83 L54,23 Z" />
+
+    <!-- Left Facet Highlight -->
+    <path
+        android:fillColor="#10B981"
+        android:fillAlpha="0.10"
+        android:pathData="M54,23 C44,23 33,27 29,31 C29,48 34,66 54,83 L54,23 Z" />
+
+    <!-- Outer Shield Border Stroke -->
+    <path
+        android:strokeColor="#34D399"
+        android:strokeWidth="2.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,23 C64,23 75,27 79,31 C79,48 74,66 54,83 C34,66 29,48 29,31 C33,27 44,23 54,23 Z" />
+
+    <!-- Inner Shield Rim -->
+    <path
+        android:strokeColor="#10B981"
+        android:strokeAlpha="0.4"
+        android:strokeWidth="1.0"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,27 C63,27 72,30 75,34 C75,48 70,62 54,77 C38,62 33,48 33,34 C36,30 45,27 54,27 Z" />
+
+    <!-- Primary Emerald Leaf -->
+    <path
+        android:fillColor="#10B981"
+        android:pathData="M54,68 C62,60 72,50 66,38 C60,48 54,60 54,68 Z" />
+
+    <!-- Primary Leaf Mint Highlight -->
+    <path
+        android:fillColor="#34D399"
+        android:pathData="M54,68 C60,58 68,48 66,38 C62,44 56,56 54,68 Z" />
+
+    <!-- Primary Leaf Vein -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="round"
+        android:pathData="M53.5,68 C58,54 62,45 66,38" />
+
+    <!-- Secondary Companion Leaf -->
+    <path
+        android:fillColor="#059669"
+        android:pathData="M53,65 C43,62 40,54 42,48 C46,55 52,60 53,65 Z" />
+
+    <!-- Secondary Leaf Vein -->
+    <path
+        android:strokeColor="#E6FFFA"
+        android:strokeAlpha="0.8"
+        android:strokeWidth="0.9"
+        android:strokeLineCap="round"
+        android:pathData="M53,64 C48,58 44,53 42,48" />
+
+    <!-- Guardian Star / Diamond -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L56,33 L61,35 L56,37 L54,42 L52,37 L47,35 L52,33 Z" />
+
+    <!-- Star Glow -->
+    <path
+        android:strokeColor="#6EE7B7"
+        android:strokeAlpha="0.6"
+        android:strokeWidth="0.8"
+        android:pathData="M54,28 L56,33 L61,35 L56,37 L54,42 L52,37 L47,35 L52,33 Z" />
+</vector>

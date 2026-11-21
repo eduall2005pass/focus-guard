@@ -10,9 +10,13 @@ echo ""
 
 # 1. Check for adb
 if ! command -v adb &> /dev/null; then
-    echo "[-] Error: 'adb' command not found in PATH."
-    echo "    Please install Android platform-tools or add adb to your PATH."
-    exit 1
+    if [ -x "/home/prof21/.android-toolchain/sdk/platform-tools/adb" ]; then
+        export PATH="/home/prof21/.android-toolchain/sdk/platform-tools:$PATH"
+    else
+        echo "[-] Error: 'adb' command not found in PATH."
+        echo "    Please install Android platform-tools or add adb to your PATH."
+        exit 1
+    fi
 fi
 
 # 2. Check connected devices
@@ -72,6 +76,28 @@ if echo "$RESULT" | grep -iq "Success"; then
     echo "=================================================="
     echo "[+] SUCCESS: Focus Guard is now the Device Owner!"
     echo "=================================================="
+
+    # 6. Apply Controlled Google App Policies on Samsung One UI
+    echo "[*] Disabling Google Discover / -1 screen on Samsung One UI Launcher..."
+    adb -s "$DEVICE_ID" shell settings put system page_minus_one_type 0 || true
+
+    echo "[*] Disabling Circle to Search & Floating Shortcuts..."
+    adb -s "$DEVICE_ID" shell settings put secure touch_and_hold_to_search 0 || true
+    adb -s "$DEVICE_ID" shell settings put secure accessibility_button_targets "" || true
+
+    echo "[*] Granting WRITE_SECURE_SETTINGS and POST_NOTIFICATIONS to Focus Guard..."
+    adb -s "$DEVICE_ID" shell pm grant com.focusguard android.permission.WRITE_SECURE_SETTINGS || true
+    adb -s "$DEVICE_ID" shell pm grant com.focusguard android.permission.POST_NOTIFICATIONS || true
+
+    echo "[*] Enabling Focus Guard Accessibility Protection..."
+    adb -s "$DEVICE_ID" shell settings put secure enabled_accessibility_services com.focusguard/com.focusguard.accessibility.WhatsAppCommunityAccessibilityService || true
+    adb -s "$DEVICE_ID" shell settings put secure accessibility_enabled 1 || true
+
+    echo "[*] Enforcing Private DNS (high.kahfguard.com)..."
+    adb -s "$DEVICE_ID" shell settings put global private_dns_mode hostname || true
+    adb -s "$DEVICE_ID" shell settings put global private_dns_specifier high.kahfguard.com || true
+
+    echo ""
     echo "Next steps:"
     echo "1. Open Focus Guard on your phone."
     echo "2. Tap 'Enforce All Policies Now'."

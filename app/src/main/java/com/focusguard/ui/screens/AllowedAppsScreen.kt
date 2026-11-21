@@ -27,15 +27,13 @@ import com.focusguard.ui.theme.*
 @Composable
 fun AllowedAppsScreen(
     installedApps: List<AppItem>,
-    customAllowed: Set<String>,
-    onAddCustomPackage: (String) -> Unit,
-    onRemoveCustomPackage: (String) -> Unit,
+    customAllowed: Set<String> = emptySet(),
+    onAddCustomPackage: ((String) -> Unit)? = null,
+    onRemoveCustomPackage: ((String) -> Unit)? = null,
     onReinstallPackage: ((String) -> Unit)? = null
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<AppCategory?>(null) }
-    var showAddDialog by remember { mutableStateOf(false) }
-    var newPackageInput by remember { mutableStateOf("") }
 
     val filteredApps = remember(installedApps, searchQuery, selectedCategory) {
         installedApps.filter { app ->
@@ -48,16 +46,7 @@ fun AllowedAppsScreen(
     }
 
     Scaffold(
-        containerColor = DarkBackground,
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true },
-                containerColor = GuardGreen,
-                contentColor = DarkBackground
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add custom allowed package")
-            }
-        }
+        containerColor = DarkBackground
     ) { padding ->
         Column(
             modifier = Modifier
@@ -66,12 +55,37 @@ fun AllowedAppsScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header notice explaining preset whitelist
+            Card(
+                colors = CardDefaults.cardColors(containerColor = DarkSurfaceElevated),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = GuardGreenText,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = "Preset Whitelist Enforced: Only pre-approved study, essential and Islamic applications are permitted. Random apps cannot be whitelisted from inside the app.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary
+                    )
+                }
+            }
+
             // Search Input
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search apps or package name...", color = TextMuted) },
+                placeholder = { Text("Search preset allowed apps...", color = TextMuted) },
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null, tint = TextMuted)
                 },
@@ -144,73 +158,12 @@ fun AllowedAppsScreen(
                     AppItemRow(
                         app = app,
                         isCustom = isCustom,
-                        onDeleteCustom = { onRemoveCustomPackage(app.packageName) },
+                        onDeleteCustom = { onRemoveCustomPackage?.invoke(app.packageName) },
                         onReinstall = { onReinstallPackage?.invoke(app.packageName) }
                     )
                 }
             }
         }
-    }
-
-    // Add Custom Package Dialog
-    if (showAddDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                showAddDialog = false
-                newPackageInput = ""
-            },
-            title = {
-                Text("Add Allowed Package", color = TextPrimary, fontWeight = FontWeight.Bold)
-            },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(
-                        "Enter the exact Android package name to approve (e.g., com.example.app):",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
-                    )
-                    OutlinedTextField(
-                        value = newPackageInput,
-                        onValueChange = { newPackageInput = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("com.company.app", color = TextMuted) },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = GuardGreen,
-                            unfocusedBorderColor = DarkBorder,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary
-                        ),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        val pkg = newPackageInput.trim()
-                        if (pkg.isNotEmpty()) {
-                            onAddCustomPackage(pkg)
-                        }
-                        showAddDialog = false
-                        newPackageInput = ""
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = GuardGreen, contentColor = DarkBackground)
-                ) {
-                    Text("Add to Allowlist")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showAddDialog = false
-                    newPackageInput = ""
-                }) {
-                    Text("Cancel", color = TextSecondary)
-                }
-            },
-            containerColor = DarkSurface,
-            shape = RoundedCornerShape(16.dp)
-        )
     }
 }
 

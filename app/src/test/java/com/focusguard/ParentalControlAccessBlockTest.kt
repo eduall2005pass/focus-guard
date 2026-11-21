@@ -26,4 +26,11 @@ class ParentalControlAccessBlockTest {
             DevicePolicyController.EMERGENCY_ALLOWED_PACKAGES.contains(DevicePolicyController.PARENTAL_CARE_PACKAGE)
         )
     }
+
+    @Test
+    fun testSecurityPreferenceKeysConstants() {
+        assertEquals("key_parental_control_blocked", DevicePolicyController.KEY_PARENTAL_CONTROL_BLOCKED)
+        assertEquals("key_factory_reset_blocked", DevicePolicyController.KEY_FACTORY_RESET_BLOCKED)
+        assertEquals("key_adb_debugging_blocked", DevicePolicyController.KEY_ADB_DEBUGGING_BLOCKED)
+    }
 }
