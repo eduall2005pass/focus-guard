@@ -33,6 +33,7 @@ class DevicePolicyController(private val context: Context) {
         const val PARENTAL_CARE_PACKAGE = "com.samsung.android.app.parentalcare"
         private const val PREFS_PARENTAL_CONTROL = "focusguard_parental_control_prefs"
         private const val KEY_PARENTAL_CONTROL_BLOCKED = "key_parental_control_blocked"
+        const val KEY_FACTORY_RESET_ENABLED = "key_factory_reset_enabled"
 
         // Protected set: packages that MUST NEVER be hidden under any condition
         val CRITICAL_SYSTEM_PACKAGES = setOf(
@@ -301,6 +302,26 @@ class DevicePolicyController(private val context: Context) {
         }
     }
 
+    fun isFactoryResetFeatureEnabled(): Boolean {
+        return parentalControlPrefs.getBoolean(KEY_FACTORY_RESET_ENABLED, true)
+    }
+
+    fun setFactoryResetFeatureEnabled(enabled: Boolean): Boolean {
+        parentalControlPrefs.edit().putBoolean(KEY_FACTORY_RESET_ENABLED, enabled).apply()
+        if (!isDeviceOwner()) return true
+        return try {
+            if (enabled) {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            } else {
+                dpm.addUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            }
+            true
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating factory reset restriction", e)
+            false
+        }
+    }
+
     /**
      * Checks if the device was booted into Safe Mode.
      * If Safe Mode is detected, automatically forces an immediate reboot back to normal mode.
@@ -342,12 +363,17 @@ class DevicePolicyController(private val context: Context) {
     }
 
     /**
-     * Wipes / Factory resets the device after PIN verification in Focus Guard Dashboard.
+     * Wipes / Factory resets the device.
+     * Controlled by Parental Control reset policy. No Focus Guard PIN required.
      */
     fun wipeDevice(): Boolean {
         if (!isDeviceOwner()) return false
+        if (!isFactoryResetFeatureEnabled()) {
+            Log.w(TAG, "Factory reset blocked: Reset feature is disabled by parental control policy.")
+            return false
+        }
         return try {
-            Log.w(TAG, "Factory reset requested via Focus Guard Dashboard with verified PIN. Wiping device...")
+            Log.w(TAG, "Factory reset requested via Focus Guard. Wiping device...")
             dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
             dpm.wipeData(0)
             true
@@ -695,9 +721,17 @@ class DevicePolicyController(private val context: Context) {
             UserManager.DISALLOW_SAFE_BOOT,
             UserManager.DISALLOW_INSTALL_UNKNOWN_SOURCES,
             UserManager.DISALLOW_ADD_USER,
-            UserManager.DISALLOW_CONFIG_DATE_TIME,
-            UserManager.DISALLOW_FACTORY_RESET      // Prevents factory reset from Settings without Focus Guard PIN!
+            UserManager.DISALLOW_CONFIG_DATE_TIME
         )
+
+        // Enforce DISALLOW_FACTORY_RESET only when factory reset feature is disabled by parental control
+        if (!isFactoryResetFeatureEnabled()) {
+            standardRestrictions.add(UserManager.DISALLOW_FACTORY_RESET)
+        } else {
+            try {
+                dpm.clearUserRestriction(adminComponent, UserManager.DISALLOW_FACTORY_RESET)
+            } catch (_: Exception) {}
+        }
 
         // Enforce DISALLOW_INSTALL_APPS when blockNewAppInstalls is enabled
         if (blockNewAppInstalls) {

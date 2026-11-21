@@ -599,4 +599,35 @@ adb shell dumpsys appwidget | grep "StudyResourcesWidgetProvider"
 ```
 Expected: Provider registered and available in widget picker.
 
+---
+
+### Task 7: Deconflict Parental Control PIN and Focus Guard Reset
+
+**Files:**
+- Modify: `app/src/main/java/com/focusguard/dpc/DevicePolicyController.kt`
+- Modify: `app/src/main/java/com/focusguard/accessibility/WhatsAppCommunityAccessibilityService.kt`
+- Modify: `app/src/main/java/com/focusguard/ui/components/SecurityPinDialogs.kt`
+- Modify: `app/src/test/java/com/focusguard/ParentalControlAccessBlockTest.kt`
+
+- [x] **Step 1: Remove PIN requirement from Focus Guard Factory Reset**
+  - Updated `FactoryResetConfirmDialog` in `SecurityPinDialogs.kt` to present a direct confirmation dialog without PIN input field.
+  - Wipes device immediately upon user confirmation when reset feature is enabled.
+
+- [x] **Step 2: Gate Parental Control Access & Settings behind Focus Guard PIN**
+  - In `SecurityThreeDotMenu`, tapping 3-dot presents a DropdownMenu:
+    - "প্যারেন্টাল কন্ট্রোল ও সিকিউরিটি" -> Prompts for Security PIN -> Opens Parental Control Management dialog.
+    - "ফোন ফ্যাক্টরি রিসেট" -> Direct confirmation warning (NO PIN required).
+    - "পিন পরিবর্তন" -> Change PIN dialog.
+
+- [x] **Step 3: Enable Reset Feature Management via Parental Control**
+  - Added `KEY_FACTORY_RESET_ENABLED`, `isFactoryResetFeatureEnabled()`, and `setFactoryResetFeatureEnabled(enabled: Boolean)` in `DevicePolicyController`.
+  - Inside PIN-verified Parental Control Settings dialog, added toggle button:
+    - "রিসেট ফিচার নিষ্ক্রিয় / সক্রিয় করুন" (Enable/Disable Reset Feature via Parental Control).
+  - In `DevicePolicyController.enforceAllPolicies()` and `WhatsAppCommunityAccessibilityService.handleSettingsAccessibilityEvent()`:
+    - When reset feature is enabled: `DISALLOW_FACTORY_RESET` is cleared and Settings reset is not intercepted, allowing Parental Control's native PIN/rules to govern reset without conflict.
+    - When reset feature is disabled: DPC adds `DISALLOW_FACTORY_RESET` and Accessibility Service blocks Settings reset.
+
+- [x] **Step 4: Verify with unit tests and assembleDebug**
+
+
 
